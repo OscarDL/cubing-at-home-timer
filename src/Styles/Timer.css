@@ -1,0 +1,12 @@
+.timer {
+
+}
+
+.timer__button {
+  background-color: grey;
+  padding: 50px 100px;
+  border-radius: 4px;
+  font-size: 24px;
+  border: none;
+  outline: 0;
+}
