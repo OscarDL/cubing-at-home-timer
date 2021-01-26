@@ -1,2 +1,2 @@
 # cah-online-timer
-WIP cloud-based (firebase) synced timer in React.
+WIP cloud-synced (firebase) online speedcubing timer using React.
