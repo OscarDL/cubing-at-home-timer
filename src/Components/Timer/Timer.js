@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { setInterval, clearInterval } from 'requestanimationframe-timer';
 
+import Spectator from './Spectator';
 import { db } from '../../firebase';
 
 import '../../Styles/Timer.css';
@@ -16,31 +17,57 @@ function Timer() {
   const [ready, setReady] = useState(false);
   const [inSolve, setInSolve] = useState(false);
   const [timerState, setTimerState] = useState(-1);
-
+  const [runnerName, setRunnerName] = useState(null);
   const [btnState, setBtnState] = useState('Ready up');
+
   const [enemyReady, setEnemyReady] = useState(0);
 
   const [key, setKey] = useState(''); // Don't set to null --- localStorage default inexistant keys to null, leading to true comparison without any key
-  const [roomExists, setRoomExists] = useState(true);
+  const [roomName, setRoomName] = useState('');
+  const [roomExists, setRoomExists] = useState(false);
 
   useEffect(() => {
-    if(localStorage.getItem('key') !== null && localStorage.getItem('runner') !== null) {
-      // Set the key only if the room exists
-      db.collection('rooms').doc(roomId).onSnapshot(snapshot => snapshot.data() !== undefined ? setKey(snapshot.data().key) : setRoomExists(false));
-
-      // Set user ready state
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => setReady(s.data().ready));
-      // Set enemy ready state
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => setEnemyReady(s.data().ready));
+    // Set the key only if the room exists & user has the correct key
+    db.collection('rooms').doc(roomId).onSnapshot(s => {
+      if(s.data() !== undefined) {
+        setKey(s.data().key);
+        setRoomExists(true);
+      } else {
+        setRoomExists(false); 
+      }
+    });
+    roomExists && db.collection('rooms').doc(roomId).onSnapshot(s => setRoomName(s.data().name));
+    
+    if (localStorage.getItem('key') !== null && localStorage.getItem('runner') !== null) {
+      if (roomExists) {
+        // Set user ready state
+        db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'ready': false, 'state': 'waiting'});
+        
+        db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => {
+          setReady(s.data().ready);
+          setRunnerName(s.data().name);
+          localStorage.setItem('name', s.data().name);
+        });
+        
+        // Set enemy ready state
+        db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => setEnemyReady(s.data().ready));
+      }
+    } else {
+      setKey('NO_KEY'); // Prevent spectator mode from triggering once for runners
     }
-  }, [key, setKey, roomId, setEnemyReady, setRoomExists]);
+  }, [setKey, roomId, roomExists, setRunnerName, setEnemyReady, setRoomExists]);
 
   useEffect(() => {
     
     // 0 = idle, 1 = ready, 2 = inspection, 3 = solving, 4 = reset
     if (timerState === 0) {
 
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'ready': true});
+      // Update & reset current-time in db here as well in case page is refreshed without clearing the timer
+      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({
+        'current-time': 0,
+        'state': 'ready',
+        'ready': true
+      });
 
       if(enemyReady) {
         setTimer(3000);
@@ -62,9 +89,8 @@ function Timer() {
 
       setBtnState('Start timer');
 
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'timer-started': true});
-
       if (enemyReady) setTimer(15000); // if condition to not restart inspection time if enemy finishes first (resetting ready state with useEffect dependency)
+      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'state': 'inspecting'});
 
       // NEED TO DO +2 & DNF
 
@@ -77,6 +103,8 @@ function Timer() {
       setInSolve(true);
       setBtnState('Stop timer');
 
+      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'state': 'solving'});
+
       if (!inSolve) setTimer(0); // if condition to not restart solve time if enemy finishes first (resetting ready state with useEffect dependency)
       const interval = setInterval(() => setTimer(time => time + 10), 10);
       return () => clearInterval(interval);
@@ -86,234 +114,79 @@ function Timer() {
       setInSolve(false);
       setBtnState('Reset timer');
 
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'timer-started': false, 'ready': false});
+      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'ready': false});
 
     } else if (timerState === 4) {
 
-      setBtnState('Ready up');
-
       setTimer(0);
       setTimerState(-1);
+      setBtnState('Ready up');
+      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'state': 'waiting'});
 
     }
 
   }, [timerState, enemyReady, setTimer, inSolve, roomId]);
 
+  useEffect(() => {
+    (timerState === 3)
+      &&
+    db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({
+      'timer-started': false,
+      'current-time': timer,
+      'ready': false
+    });
+
+    (timerState === 4)
+      &&
+    db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'current-time': 0});
+  }, [timer, roomId, timerState]);
+
   return (
-    <div className="timer">
-      <h1>ROOM ID: {roomId}</h1>
-
-      <br/><br/>
-      
-      {roomExists
-        ?
-      <>
-        <span>
-          <h1 style={{color: 'white'}}>
-            {(timerState === 2 || timerState === 3) ? formatTimer(timer) : (timerState === 1 ? Math.ceil(timer / 1000) : timer / 1000)}
-            {/* Math.ceil() is used to round to the upper int for the countdown, since it has to be refreshed every 10ms and not 1000ms */}
-          </h1>
-        </span>
-
-        <br/>
-        {(localStorage.getItem('key') === key && (localStorage.getItem('runner') === '1' || localStorage.getItem('runner') === '2'))
-          ?
+    <>
+      <div className="timer">
+        {roomExists
+          &&
         <>
-          <button className="timer__button" onClick={() => timerState !== 0 && setTimerState(timer => timer + 1)}>{btnState}</button>
+          <h1>ROOM: {roomName}</h1>
           <br/><br/>
-          <h2 style={{color: ready ? 'lightgreen' : 'red'}}>
-            YOU: {ready ? 'READY' : 'NOT READY'}
-          </h2>
-          <br/>
-          <h2 style={{color: enemyReady ? 'lightgreen' : 'red'}}>
-            ENEMY: {enemyReady ? 'READY' : 'NOT READY'}
-          </h2>
-        </>
-          :
-        <h1>SPECTATOR MODE</h1>}
-      </>
-        :
-      <h1>
-        This room does not exist.
-      </h1>}
-    </div>
+          {(key !== 'NO_KEY' && localStorage.getItem('key') === key && (localStorage.getItem('runner') === '1' || localStorage.getItem('runner') === '2'))
+            ?
+          <>
+            <div className="runner__name">
+              <label for="cah-name">Your name</label>
+              <br/>
+              <input
+                type="text"
+                name="cah-name"
+                defaultValue={runnerName}
+                onBlur={e => db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'name': e.target.value})}
+              />
+            </div>
+            
+            <span>
+              <h1 style={{color: 'white'}}>
+                {(timerState === 2 || timerState === 3) ? formatTimer(timer) : (timerState === 1 ? Math.ceil(timer / 1000) : timer / 1000)}
+                {/* (1*) Math.ceil() rounds to the upper int for the countdown - since it has to be refreshed every 10ms and not 1000ms */}
+              </h1>
+            </span>
+
+            <br/>
+            <button className="timer__button" onClick={() => timerState !== 0 && setTimerState(timer => timer + 1)}>{btnState}</button>
+            <br/><br/>
+            <h2 style={{color: ready ? 'lightgreen' : 'red'}}>
+              YOU: {ready ? 'READY' : 'NOT READY'}
+            </h2>
+            <br/>
+            <h2 style={{color: enemyReady ? 'lightgreen' : 'red'}}>
+              ENEMY: {enemyReady ? 'READY' : 'NOT READY'}
+            </h2>
+          </>
+            :
+          <Spectator room={roomId}/>}
+        </>}
+      </div>
+    </>
   );
 }
 
 export default Timer;
-
-
-
-
-
-
-
-
-
-
-
-
-/*import { useParams } from 'react-router-dom';
-import React, { useEffect, useState } from 'react';
-import { setInterval, clearInterval } from 'requestanimationframe-timer';
-
-import { db } from '../../firebase';
-
-import '../../Styles/Timer.css';
-
-function formatTimer(timer) {
-  return ((timer.toString()).substring(0, timer.toString().length - 3) || '0') + '.' + (timer < 100 && timer > 1 ? '0' : '') + ((timer.toString()).substring(timer.toString().length - 3, timer.toString().length - 1) || '00');
-}
-
-function Timer() {
-  const { roomId } = useParams();
-  const [name1, setName1] = useState(null);
-  const [name2, setName2] = useState(null);
-  const [ready1, setReady1] = useState(false);
-  const [ready2, setReady2] = useState(false);
-  const [isSpectator, setIsSpectator] = useState(true);
-
-  const [timer, setTimer] = useState(0);
-  const [ready, setReady] = useState(false);
-  const [enemyReady, setEnemyReady] = useState(0);
-
-  const [inSolve, setInSolve] = useState(false);
-  const [timerState, setTimerState] = useState(-1);
-  const [btnState, setBtnState] = useState('Ready up');
-
-  const [key, setKey] = useState(''); // Don't set to null --- localStorage defaults inexistant keys to null, leading to true comparison without any key
-  const [roomExists, setRoomExists] = useState(true);
-
-  useEffect(() => {
-    if(localStorage.getItem('key') !== null && localStorage.getItem('runner') !== null) {
-      // Set the key only if the room exists
-      db.collection('rooms').doc(roomId).onSnapshot(snapshot => snapshot.data() !== undefined ? setKey(snapshot.data().key) : setRoomExists(false));
-
-      if (roomExists) {
-        // Set runner name
-        localStorage.setItem('name', window.prompt('Please type in your name'));
-        db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'name': localStorage.getItem('name')});
-        // Set user ready state
-        db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => setReady(s.data().ready));
-        // Set enemy ready state
-        db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => setEnemyReady(s.data().ready));
-      }
-    }
-  }, [setKey, roomId, roomExists, setEnemyReady, setRoomExists]);
-
-  useEffect(() => {
-    if (localStorage.getItem('key') === key && (localStorage.getItem('runner') === '1' || '2')) {
-      setIsSpectator(false);
-    } else {
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner1').onSnapshot(s => {setName1(s.data().name); setReady1(s.data().ready)});
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner2').onSnapshot(s => {setName2(s.data().name); setReady2(s.data().ready)});
-    }
-  }, [key, roomId, setName1, setName2, setReady1, setReady2, setIsSpectator]);
-
-  useEffect(() => {
-    
-    // 0 = idle, 1 = ready, 2 = inspection, 3 = solving, 4 = reset
-    if (timerState === 0) {
-
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'ready': true});
-
-      if(enemyReady) {
-        setTimer(3000);
-        const interval = setInterval(() => setTimer(time => time - 1000), 1000);
-        const timeout = setTimeout(() => {clearInterval(interval); setTimerState(state => state + 1)}, 3000);
-        return () => clearTimeout(timeout);
-      }
-
-    } else if (timerState === 1) {
-
-      setBtnState('Start timer');
-
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'timer-started': true});
-
-      if (enemyReady) setTimer(15000); // if condition to not restart inspection time if enemy finishes first (resetting ready state with useEffect dependency)
-      const interval = setInterval(() => setTimer(time => time - 1000), 1000);
-      return () => clearInterval(interval);
-
-    } else if (timerState === 2) {
-
-      setInSolve(true);
-      setBtnState('Stop timer');
-
-      if (!inSolve) setTimer(0); // if condition to not restart solve time if enemy finishes first (resetting ready state with useEffect dependency)
-      const interval = setInterval(() => setTimer(time => time + 10), 10);
-      return () => clearInterval(interval);
-
-    } else if (timerState === 3) {
-
-      setInSolve(false);
-      setBtnState('Reset timer');
-
-      db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'timer-started': false, 'ready': false});
-
-    } else if (timerState === 4) {
-
-      setBtnState('Ready up');
-
-      setTimer(0);
-      setTimerState(-1);
-
-    }
-
-  }, [timerState, enemyReady, setTimer, inSolve, roomId]);
-
-  return (
-    <div className="timer">
-      <h1>ROOM ID: {roomId}</h1>
-
-      <br/><br/>
-      
-      {roomExists
-        ?
-      <>
-        <span>
-          <h1 style={{color: 'white'}}>
-            {timerState === 2 ? formatTimer(timer) : timer / 1000}
-          </h1>
-        </span>
-
-        <br/>
-        {!isSpectator
-          ?
-        <>
-          {// if timerState === 0 [ready / countdown], button should not do anything
-          }
-          <button className="timer__button" onClick={() => timerState !== 0 && setTimerState(timer === 0 ? 0 : timerState + 1)}>{btnState}</button>
-          <br/><br/>
-          <h2 style={{color: ready ? 'lightgreen' : 'red'}}>
-            YOU: {ready ? 'READY' : 'NOT READY'}
-          </h2>
-          <br/>
-          <h2 style={{color: enemyReady ? 'lightgreen' : 'red'}}>
-            ENEMY: {enemyReady ? 'READY' : 'NOT READY'}
-          </h2>
-        </>
-          :
-        <>
-          <h1>SPECTATOR MODE</h1>
-          <br/>
-          <span style={{display: 'flex', justifyContent: 'space-between', textAlign: 'center'}}>
-            <span style={{display: 'flex', flexDirection: 'column'}}>
-              <h3>Runner 1: {name1}</h3>
-              <h3 style={{color: ready1 ? 'lightgreen' : 'red'}}>{ready1}</h3>
-            </span>
-            <span style={{display: 'flex', flexDirection: 'column'}}>
-              <h3>Runner 2: {name2}</h3>
-              <h3 style={{color: ready2 ? 'lightgreen' : 'red'}}>{ready2}</h3>
-            </span>
-          </span>
-        </>}
-      </>
-        :
-      <h1>
-        This room does not exist.
-      </h1>}
-    </div>
-  );
-}
-
-export default Timer;*/

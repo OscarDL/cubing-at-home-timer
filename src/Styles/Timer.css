@@ -10,3 +10,25 @@
   border: none;
   outline: 0;
 }
+
+.runner__name {
+  flex-direction: column;
+  position: absolute;
+  display: flex;
+  margin: 20px;
+  right: 0;
+  top: 0;
+}
+
+.spectator__runners {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.spectator__runners > span {
+  display: flex;
+  text-align: center;
+  flex-direction: column;
+}
+.spectator__runners > span > * { padding: 20px; }
