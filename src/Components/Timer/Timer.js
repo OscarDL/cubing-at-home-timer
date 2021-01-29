@@ -1,5 +1,6 @@
 import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
+import { Button, TextField} from '@material-ui/core';
 import { setInterval, clearInterval } from 'requestanimationframe-timer';
 
 import Spectator from './Spectator';
@@ -35,6 +36,10 @@ function Timer() {
       } else {
         setRoomExists(false); 
       }
+    
+      // Selected room background color
+      document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = '#4055aa';
+      document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = '#324191');
     });
     roomExists && db.collection('rooms').doc(roomId).onSnapshot(s => setRoomName(s.data().name));
     
@@ -143,48 +148,51 @@ function Timer() {
 
   return (
     <>
-      <div className="timer">
-        {roomExists
-          &&
+      {roomExists
+        ?
+      <>
+        <h1>{roomName.toUpperCase()}</h1>
+        {(key !== 'NO_KEY' && localStorage.getItem('key') === key && (localStorage.getItem('runner') === '1' || localStorage.getItem('runner') === '2'))
+          ?
         <>
-          <h1>ROOM: {roomName}</h1>
-          <br/><br/>
-          {(key !== 'NO_KEY' && localStorage.getItem('key') === key && (localStorage.getItem('runner') === '1' || localStorage.getItem('runner') === '2'))
-            ?
-          <>
-            <div className="runner__name">
-              <label for="cah-name">Your name</label>
-              <br/>
-              <input
-                type="text"
-                name="cah-name"
-                defaultValue={runnerName}
-                onBlur={e => db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'name': e.target.value})}
-              />
-            </div>
-            
-            <span>
-              <h1 style={{color: 'white'}}>
-                {(timerState === 2 || timerState === 3) ? formatTimer(timer) : (timerState === 1 ? Math.ceil(timer / 1000) : timer / 1000)}
+          <div className="runner__name">
+            <TextField
+              label='Your name'
+              defaultValue={runnerName}
+              helperText='Help live viewers know who you are.'
+              onBlur={e => db.collection('rooms').doc(roomId).collection('competitors').doc('runner'+localStorage.getItem('runner')).update({'name': e.target.value})}
+            />
+          </div>
+
+          <div className="timer">
+            <span className="timer__time">
+              <h1>
+                {(timerState === -1 || timerState === 2 || timerState === 3) ? formatTimer(timer) : (timerState === 1 ? Math.ceil(timer / 1000) : timer / 1000)}
                 {/* (1*) Math.ceil() rounds to the upper int for the countdown - since it has to be refreshed every 10ms and not 1000ms */}
               </h1>
             </span>
 
-            <br/>
-            <button className="timer__button" onClick={() => timerState !== 0 && setTimerState(timer => timer + 1)}>{btnState}</button>
-            <br/><br/>
-            <h2 style={{color: ready ? 'lightgreen' : 'red'}}>
-              YOU: {ready ? 'READY' : 'NOT READY'}
-            </h2>
-            <br/>
-            <h2 style={{color: enemyReady ? 'lightgreen' : 'red'}}>
-              ENEMY: {enemyReady ? 'READY' : 'NOT READY'}
-            </h2>
-          </>
-            :
-          <Spectator room={roomId}/>}
-        </>}
-      </div>
+            <Button className="timer__button" onClick={() => timerState !== 0 && setTimerState(timer => timer + 1)}>
+              {btnState}
+            </Button>
+            <span>
+              <h2 style={{color: ready ? 'lightgreen' : 'red'}}>
+                YOU: {ready ? 'READY' : 'NOT READY'}
+              </h2>
+              <br/>
+              <h2 style={{color: enemyReady ? 'lightgreen' : 'red'}}>
+                ENEMY: {enemyReady ? 'READY' : 'NOT READY'}
+              </h2>
+            </span>
+          </div>
+        </>
+          :
+        <Spectator room={roomId}/>}
+      </>
+        :
+      <div className="timer">
+        This room does not exist.
+      </div>}
     </>
   );
 }

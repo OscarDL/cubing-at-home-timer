@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 
 import { db } from '../firebase';
 
+import '../Styles/Sidebar.css';
+
 function Sidebar() {
   const [channels, setChannels] = useState([]);
 
@@ -18,18 +20,20 @@ function Sidebar() {
   }, []);
 
   return (
-    <>
-      <Link to='/'>Go Home</Link>
-      <br/>
-      {channels.map((channel, key) => (
-        <span key={key}>
-          <Link to={`/room/${channel.id}`}>
+    <div className="sidebar">
+      <Link to='/' className="branding">
+        <img src="https://www.cubingathome.com/logo.png"/>
+        <h1>TIMER</h1>
+      </Link>
+      <hr/>
+      <div className="rooms">
+        {channels.map((channel, key) => (
+          <Link key={key} to={`/room/${channel.id}`}>
             {channel.name}
           </Link>
-          <br/>
-        </span>
-      ))}
-    </>
+        ))}
+      </div>
+    </div>
   );
 }
 

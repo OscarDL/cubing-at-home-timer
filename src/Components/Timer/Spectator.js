@@ -37,31 +37,32 @@ function Spectator({room}) {
 
   return (
     <>
-      <h1>SPECTATOR MODE</h1>
-      <br/>
-      <span className="spectator__runners">
+      <h1 style={{fontSize: '72px'}}>SPECTATOR MODE</h1>
+      <div className="timer">
+        <span className="spectator__runners">
 
-        <span>
-          <h2>
-            {runner1['name'] !== '' ? runner1['name'] : 'RUNNER 1'}
-          </h2>
-          <h3>
-            {runner1['current-time'] !== undefined &&
-            (runner1['current-time'] === 0 ? (runner1['state'] === 'solving' ? formatTimer(timer1) : runner1['state']) : formatTimer(runner1['current-time']))}
-          </h3>
+          <span>
+            <h2>
+              {runner1['name'] !== '' ? runner1['name'] : 'RUNNER 1'}
+            </h2>
+            <h1>
+              {runner1['current-time'] !== undefined &&
+              (runner1['current-time'] === 0 ? (runner1['state'] === 'solving' ? formatTimer(timer1) : runner1['state']) : formatTimer(runner1['current-time']))}
+            </h1>
+          </span>
+
+          <span>
+            <h2>
+              {runner2['name'] !== '' ? runner2['name'] : 'RUNNER 2'}
+            </h2>
+            <h1>
+              {runner2['current-time'] !== undefined &&
+              (runner2['current-time'] === 0 ? (runner2['state'] === 'solving' ? formatTimer(timer2) : runner2['state']) : formatTimer(runner2['current-time']))}
+            </h1>
+          </span>
+
         </span>
-
-        <span>
-          <h2>
-            {runner2['name'] !== '' ? runner2['name'] : 'RUNNER 2'}
-          </h2>
-          <h3>
-            {runner2['current-time'] !== undefined &&
-            (runner2['current-time'] === 0 ? (runner2['state'] === 'solving' ? formatTimer(timer2) : runner2['state']) : formatTimer(runner2['current-time']))}
-          </h3>
-        </span>
-
-      </span>
+      </div>
     </>
   );
 }

@@ -43,9 +43,7 @@ function App() {
 
   return (
     <div className="app">
-      <div className="sidebar">
-        <Sidebar/>
-      </div>
+      <Sidebar/>
       <div className="body">
         <Switch>
           <Route exact path="/">
