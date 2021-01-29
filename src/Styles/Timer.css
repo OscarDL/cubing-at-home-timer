@@ -13,9 +13,8 @@
   font-size: 96px;
 }
 
-.MuiButtonBase-root {
-  background-color: #22b14c !important;
-  padding: 20px 40px !important;
+.runnerState {
+  color: #22b14c !important;
   font-size: 32px !important;
   margin: 10px 0 !important;
 }

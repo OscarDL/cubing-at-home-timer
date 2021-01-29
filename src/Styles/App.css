@@ -12,6 +12,22 @@
   width: 100%;
 }
 
+.welcome {
+  justify-content: flex-start;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  display: flex;
+  flex-grow: 1;
+}
+.welcome > img {
+  margin: 0 auto;
+  max-width: 20%;
+  min-width: 120px;
+}
+.welcome > * { padding: 30px 10px 20px; }
+.welcome > span > * { padding: 10px 0; }
+
 .body > h1 {
   justify-content: center;
   padding: 20px 0;

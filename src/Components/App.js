@@ -47,9 +47,12 @@ function App() {
       <div className="body">
         <Switch>
           <Route exact path="/">
-            <span>
-              <h1>Welcome to the C@H online timer!</h1>
-              <p>Please select a room on the left side.</p>
+            <span className="welcome">
+              <img src="https://www.cubingathome.com/logo.png"/>
+              <span>
+                <h1>Welcome to the C@H online timer!</h1>
+                <h2>Please select a room on the left side.</h2>
+              </span>
             </span>
           </Route>
           <Route path="/room/:roomId">

@@ -1,6 +1,6 @@
 import { useParams } from 'react-router-dom';
+import { TextField } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
-import { Button, TextField} from '@material-ui/core';
 import { setInterval, clearInterval } from 'requestanimationframe-timer';
 
 import Spectator from './Spectator';
@@ -18,21 +18,22 @@ function Timer() {
   const [ready, setReady] = useState(false);
   const [inSolve, setInSolve] = useState(false);
   const [timerState, setTimerState] = useState(-1);
-  const [btnState, setBtnState] = useState('Ready up');
-
-  const [enemyReady, setEnemyReady] = useState(0);
+  const [runnerState, setRunnerState] = useState('');
+  const [opponentReady, setOpponentReady] = useState(0);
 
   const [key, setKey] = useState(''); // Don't set to null --- localStorage default inexistant keys to null, leading to true comparison without any key
-  const [roomName, setRoomName] = useState('');
+  const [roomName, setRoomName] = useState(null);
   const [roomExists, setRoomExists] = useState(false);
 
   useEffect(() => {
     // Set the key only if the room exists & user has the correct key
     db.collection('timer-rooms').doc(roomId).onSnapshot(s => {
       if(s.data() !== undefined) {
-        setKey(s.data().key);
         setRoomExists(true);
+        setKey(s.data().key);
+        setRoomName(s.data().name);
       } else {
+        setRoomName('');
         setRoomExists(false); 
       }
     
@@ -41,7 +42,6 @@ function Timer() {
         document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = '#324191');
       }
     });
-    roomExists && db.collection('timer-rooms').doc(roomId).onSnapshot(s => setRoomName(s.data().name));
     
     if (localStorage.getItem('key') !== null && localStorage.getItem('runner') !== null) {
       if (roomExists) {
@@ -49,18 +49,43 @@ function Timer() {
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false, 'state': 'waiting'});
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => setReady(s.data().ready));
         
-        // Set enemy ready state
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => setEnemyReady(s.data().ready));
+        // Set opponent ready state
+        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => setOpponentReady(s.data().ready));
       }
     } else {
       setKey('NO_KEY'); // Prevent spectator mode from triggering once for runners
     }
-  }, [setKey, roomId, roomExists, setEnemyReady, setRoomExists]);
+  }, [setKey, roomId, roomExists, setOpponentReady, setRoomExists]);
+
+  useEffect(() => {
+    if (timerState === -1 || timerState === 3) {
+      document.body.onkeyup = function(e) {
+        if (e.keyCode === 32 && (document.activeElement.tagName !== 'INPUT')) {
+          setTimerState(state => state + 1);
+        }
+      }
+    } else if (timerState === 0) {
+      document.body.onkeyup = function(e) {
+        if (e.keyCode === 27 && (document.activeElement.tagName !== 'INPUT')) {
+          setTimerState(state => state - 1);
+        }
+      }
+    } else if (timerState === 2) {
+      document.body.onkeyup = function(e) {
+        setTimerState(state => state + 1);
+      }
+    }
+  }, [timerState, setTimerState]);
 
   useEffect(() => {
     
-    // 0 = idle, 1 = ready, 2 = inspection, 3 = solving, 4 = reset
-    if (timerState === 0) {
+    // -1 = idle, 0 = ready, 1 = inspection, 2 = solving, 3 = done, 4 = reset
+    if (timerState === -1) {
+
+      setRunnerState('Press space to ready up.');
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false, 'state': 'waiting', 'current-time': 0});
+
+    } else if (timerState === 0) {
 
       // Update & reset current-time in db here as well in case page is refreshed without clearing the timer
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({
@@ -69,8 +94,9 @@ function Timer() {
         'ready': true
       });
 
-      if(enemyReady) {
+      if(opponentReady) {
         setTimer(3000);
+        setRunnerState('Starting in');
 
         const interval = setInterval(() =>
           setTimer(time => {
@@ -81,14 +107,14 @@ function Timer() {
             return (time - 1000);
           }),
         1000);
-      }
+      } else setRunnerState('Waiting for opponent to ready up... Press escape to unready.');
 
     } else if (timerState === 1) {
 
-      setBtnState('Start timer');
+      setRunnerState('Inspection ends in');
 
-      if (enemyReady) {
-        setTimer(15000); // if condition to not restart inspection time if enemy finishes first (resetting ready state with useEffect dependency)
+      if (opponentReady) {
+        setTimer(15000); // if condition to not restart inspection time if opponent finishes first (resetting ready state with useEffect dependency)
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'state': 'inspecting'});
 
         const interval = setInterval(() =>
@@ -105,31 +131,31 @@ function Timer() {
     } else if (timerState === 2) {
 
       setInSolve(true);
-      setBtnState('Stop timer');
+      setRunnerState('Press any key to stop the timer.');
 
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'state': 'solving'});
 
-      if (!inSolve) setTimer(0); // if condition to not restart solve time if enemy finishes first (resetting ready state with useEffect dependency)
+      if (!inSolve) setTimer(0); // if condition to not restart solve time if opponent finishes first (resetting ready state with useEffect dependency)
       const interval = setInterval(() => setTimer(time => time + 10), 10);
       return () => clearInterval(interval);
 
     } else if (timerState === 3) {
 
       setInSolve(false);
-      setBtnState('Reset timer');
+      setRunnerState('Press space to clear the timer.');
 
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false});
 
     } else if (timerState === 4) {
 
       setTimer(0);
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'state': 'waiting', 'current-time': 0});
+
       setTimerState(-1);
-      setBtnState('Ready up');
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'state': 'waiting'});
 
     }
 
-  }, [timerState, enemyReady, setTimer, inSolve, roomId]);
+  }, [setRunnerState, timerState, opponentReady, setTimer, inSolve, roomId]);
 
   useEffect(() => {
     (timerState === 3)
@@ -147,7 +173,8 @@ function Timer() {
 
   return (
     <>
-      {roomExists
+      {roomName !== null && // To avoid displaying "This room does not exist" while an existing room is loading
+      (roomExists
         ?
       <>
         <h1>{roomName.toUpperCase()}</h1>
@@ -173,18 +200,18 @@ function Timer() {
               </h1>
             </span>
 
-            <Button className="timer__button" onClick={() => (timerState !== 0 && timerState !== 1) && setTimerState(timer => timer + 1)}>
-              {btnState}
-            </Button>
+            <h2 className="runnerState">{runnerState}</h2>
+            {(timerState < 1 || timerState > 3)
+              &&
             <span>
               <h2 style={{color: ready ? 'lightgreen' : 'red'}}>
                 YOU: {ready ? 'READY' : 'NOT READY'}
               </h2>
               <br/>
-              <h2 style={{color: enemyReady ? 'lightgreen' : 'red'}}>
-                ENEMY: {enemyReady ? 'READY' : 'NOT READY'}
+              <h2 style={{color: opponentReady ? 'lightgreen' : 'red'}}>
+                OPPONENT: {opponentReady ? 'READY' : 'NOT READY'}
               </h2>
-            </span>
+            </span>}
           </div>
         </>
           :
@@ -192,8 +219,8 @@ function Timer() {
       </>
         :
       <div className="timer">
-        This room does not exist.
-      </div>}
+        <h1>This room does not exist.</h1>
+      </div>)}
     </>
   );
 }
