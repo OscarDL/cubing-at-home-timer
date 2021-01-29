@@ -15,8 +15,8 @@ function Spectator({room}) {
   const [timer2, setTimer2] = useState(0);
 
   useEffect(() => {
-    db.collection('rooms').doc(room).collection('competitors').doc('runner1').onSnapshot(s => setRunner1(s.data()));
-    db.collection('rooms').doc(room).collection('competitors').doc('runner2').onSnapshot(s => setRunner2(s.data()));
+    db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').onSnapshot(s => setRunner1(s.data()));
+    db.collection('timer-rooms').doc(room).collection('runners').doc('runner2').onSnapshot(s => setRunner2(s.data()));
   }, [room, setRunner1, setRunner2]);
 
   useEffect(() => {

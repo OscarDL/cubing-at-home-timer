@@ -6,12 +6,12 @@
 
 .sidebar > hr {
   background-color: #666;
-  margin: 4px 0;
   border: none;
   height: 1px;
 }
 
 .sidebar > .branding {
+  justify-content: center;
   text-decoration: none;
   align-items: center;
   letter-spacing: 1px;
@@ -40,10 +40,12 @@
 .sidebar > .rooms > a {
   max-width: calc(100% - 16px); /* padding left + right */
   text-decoration: none;
+  white-space: nowrap;
   border-radius: 4px;
   transition: 0.15s;
+  overflow: hidden;
   font-size: 18px;
-  margin-top: 4px;
+  margin-top: 8px;
   color: inherit;
   padding: 8px;
   width: 100%;
