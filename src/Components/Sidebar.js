@@ -22,7 +22,7 @@ function Sidebar() {
   return (
     <div className="sidebar">
       <Link to='/' className="branding">
-        <img src="https://www.cubingathome.com/logo.png"/>
+        <img src="https://www.cubingathome.com/logo.png" alt="logo"/>
         <h1>TIMER</h1>
       </Link>
       <hr/>

@@ -19,11 +19,30 @@ function Timer() {
   const [inSolve, setInSolve] = useState(false);
   const [timerState, setTimerState] = useState(-1);
   const [runnerState, setRunnerState] = useState('');
+  const [opponentName, setOpponentName] = useState('');
   const [opponentReady, setOpponentReady] = useState(0);
 
   const [key, setKey] = useState(''); // Don't set to null --- localStorage default inexistant keys to null, leading to true comparison without any key
   const [roomName, setRoomName] = useState(null);
   const [roomExists, setRoomExists] = useState(false);
+
+  useEffect(() => {
+    // Set name in db when user joins the room
+    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({
+      'name': (localStorage.getItem('name') !== null && localStorage.getItem('name')?.length > 0) ? localStorage.getItem('name') : ''
+    });
+
+    // Try to reset db name when user leaves the page
+    window.onbeforeunload = function() {
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': ''});
+    }
+
+    // Reset db name & selected room highlight color when user leaves the room
+    return () => {
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': ''});
+      document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = '#324191';
+    }
+  }, [roomId]);
 
   useEffect(() => {
     // Set the key only if the room exists & user has the correct key
@@ -37,7 +56,7 @@ function Timer() {
         setRoomExists(false); 
       }
     
-      if (roomExists) { // Selected room background color
+      if (roomExists) { // Selected room highlight color
         document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = '#4055aa';
         document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = '#324191');
       }
@@ -49,18 +68,25 @@ function Timer() {
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false, 'state': 'waiting'});
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => setReady(s.data().ready));
         
-        // Set opponent ready state
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => setOpponentReady(s.data().ready));
+        // Set opponent name & ready state
+        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => {
+          setOpponentName(s.data().name);
+          setOpponentReady(s.data().ready);
+        });
       }
     } else {
       setKey('NO_KEY'); // Prevent spectator mode from triggering once for runners
     }
-  }, [setKey, roomId, roomExists, setOpponentReady, setRoomExists]);
+  }, [setKey, roomId, roomExists, setOpponentName, setOpponentReady, setRoomExists]);
 
   useEffect(() => {
     if (timerState === -1 || timerState === 3) {
       document.body.onkeyup = function(e) {
         if (e.keyCode === 32 && (document.activeElement.tagName !== 'INPUT')) {
+          (localStorage.getItem('name') === null || localStorage.getItem('name')?.length === 0)
+            ?
+          window.alert('Please enter your name before competing.')
+            :
           setTimerState(state => state + 1);
         }
       }
@@ -107,7 +133,7 @@ function Timer() {
             return (time - 1000);
           }),
         1000);
-      } else setRunnerState('Waiting for opponent to ready up... Press escape to unready.');
+      } else setRunnerState('Waiting for opponent to ready up...');
 
     } else if (timerState === 1) {
 
@@ -200,7 +226,11 @@ function Timer() {
               </h1>
             </span>
 
-            <h2 className="runnerState">{runnerState}</h2>
+            <h2 className="runnerState">
+              {runnerState}
+              {(timerState === 0 && !opponentReady) && <><br/>Press escape to unready.</>}
+            </h2>
+            
             {(timerState < 1 || timerState > 3)
               &&
             <span>
@@ -209,7 +239,7 @@ function Timer() {
               </h2>
               <br/>
               <h2 style={{color: opponentReady ? 'lightgreen' : 'red'}}>
-                OPPONENT: {opponentReady ? 'READY' : 'NOT READY'}
+                {opponentName === '' ? 'OPPONENT: ' : (opponentName + ': ')}{opponentReady ? 'READY' : 'NOT READY'}
               </h2>
             </span>}
           </div>

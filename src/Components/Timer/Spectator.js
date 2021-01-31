@@ -9,8 +9,7 @@ function formatTimer(timer) {
 
 function Spectator({room}) {
 
-  const [alreadySolving1, setAlreadySolving1] = useState(false);
-  const [alreadySolving2, setAlreadySolving2] = useState(false);
+  const [alreadySolving, setAlreadySolving] = useState(false);
 
   const [runner1, setRunner1] = useState({});
   const [runner2, setRunner2] = useState({});
@@ -20,9 +19,10 @@ function Spectator({room}) {
 
 
   useEffect(() => {
-    db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').get('state').then(s => setAlreadySolving1(s.data().state === 'solving' ? true : false));
-    db.collection('timer-rooms').doc(room).collection('runners').doc('runner2').get('state').then(s => setAlreadySolving2(s.data().state === 'solving' ? true : false));
-  }, [room, setAlreadySolving1, setAlreadySolving2])
+    // There isn't really any way to check the time while solving if not updating the db at least every second.
+    // + No real need to check if both runners already started (ignoring the delay between runners, which is a positive thing anyway).
+    db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').get('state').then(s => setAlreadySolving(s.data().state === 'solving' ? true : false));
+  }, [room, setAlreadySolving])
 
   useEffect(() => {
     db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').onSnapshot(s => setRunner1(s.data()));
@@ -62,7 +62,7 @@ function Spectator({room}) {
             </h2>
             <h1>
               {runner1['current-time'] !== undefined &&
-              (runner1['current-time'] === 0 ? (runner1['state'] === 'solving' ? (alreadySolving1 ? 'SOLVING' : formatTimer(timer1)) : runner1['state']) : formatTimer(runner1['current-time']))}
+              (runner1['current-time'] === 0 ? (runner1['state'] === 'solving' ? (alreadySolving ? 'SOLVING' : formatTimer(timer1)) : runner1['state']) : formatTimer(runner1['current-time']))}
             </h1>
           </span>
 
@@ -72,7 +72,7 @@ function Spectator({room}) {
             </h2>
             <h1>
               {runner2['current-time'] !== undefined &&
-              (runner2['current-time'] === 0 ? (runner2['state'] === 'solving' ? (alreadySolving2 ? 'SOLVING' : formatTimer(timer2)) : runner2['state']) : formatTimer(runner2['current-time']))}
+              (runner2['current-time'] === 0 ? (runner2['state'] === 'solving' ? (alreadySolving ? 'SOLVING' : formatTimer(timer2)) : runner2['state']) : formatTimer(runner2['current-time']))}
             </h1>
           </span>
 

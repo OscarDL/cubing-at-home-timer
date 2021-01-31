@@ -53,9 +53,3 @@
 .sidebar > .rooms > a:hover {
   background-color: #4055aa !important;
 }
-
-/* ----- DARK THEME ----- */
-
-.dark__theme > .sidebar {
-  background-color: #181818;
-}

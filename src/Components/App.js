@@ -48,7 +48,7 @@ function App() {
         <Switch>
           <Route exact path="/">
             <span className="welcome">
-              <img src="https://www.cubingathome.com/logo.png"/>
+              <img src="https://www.cubingathome.com/logo.png" alt="logo"/>
               <span>
                 <h1>Welcome to the C@H online timer!</h1>
                 <h2>Please select a room on the left side.</h2>
