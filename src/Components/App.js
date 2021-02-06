@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Switch, Route } from 'react-router-dom';
+import { Switch, Route, Redirect } from 'react-router-dom';
 
 import Timer from './Timer/Timer';
 import Sidebar from './Sidebar';
@@ -58,6 +58,7 @@ function App() {
           <Route path="/room/:roomId">
             <Timer/>
           </Route>
+          <Route render={() => <Redirect to='/' />} />
         </Switch>
       </div>
     </div>
