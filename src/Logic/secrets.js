@@ -1,1 +1,0 @@
-export const WCA_UID = 'JT8FTodqDSDOpOIAzZWl0Gf6MtSxRzCM86LZ8mdCvlY';
