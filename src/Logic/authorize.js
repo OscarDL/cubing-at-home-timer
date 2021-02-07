@@ -1,5 +1,5 @@
 //modified from https://github.com/saranshgrover/cubing-at-home/blob/master/src/logic/auth.js
-import {  WCA_UID } from './wca-secrets';
+import { WCA_UID } from './secrets';
 
 export const localStorageKey = (key) => `WCA-Real-Time.${WCA_UID}.${key}`;
 

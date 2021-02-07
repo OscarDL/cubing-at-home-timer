@@ -10,6 +10,7 @@
 
 # production
 /build
+/src/Components/Logic/secrets.js
 
 # misc
 .DS_Store
