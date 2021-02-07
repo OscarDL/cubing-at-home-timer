@@ -1,7 +1,7 @@
 .sidebar {
-  padding: 10px;
-  color: white;
   background-color: #324191;
+  color: white;
+  padding: 10px;
 }
 
 .sidebar > hr {
@@ -37,7 +37,7 @@
   color: inherit;
   display: flex;
 }
-.sidebar > .rooms > a {
+.sidebar > .rooms > a, .sidebar > .rooms > span {
   max-width: calc(100% - 16px); /* padding left + right */
   text-decoration: none;
   white-space: nowrap;
@@ -50,6 +50,13 @@
   padding: 8px;
   width: 100%;
 }
-.sidebar > .rooms > a:hover {
-  background-color: #4055aa !important;
+.sidebar > .rooms > a:hover, .sidebar > .rooms > span:hover {
+  background-color: rgba(255, 255, 255, 0.075) !important;
+  cursor: pointer;
+}
+
+@media(prefers-color-scheme: dark) {
+  .sidebar {
+    background-color: #283474;
+  }
 }

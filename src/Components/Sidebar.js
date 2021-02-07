@@ -1,19 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
+import { isSignedIn } from '../Logic/authorize';
 import { db } from '../firebase';
 
 import '../Styles/Sidebar.css';
 
-import { isSignedIn, login, logout } from "../Logic/authorize";
-import { getMe } from "../Logic/user"; 
-
 function Sidebar() {
   const [channels, setChannels] = useState([]);
-  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    getMe()?.then(res=>setUser(res));
+    (isSignedIn()) &&
     db.collection('timer-rooms').onSnapshot(snapshot => (
       setChannels(
         snapshot.docs.map(doc => ({
@@ -32,17 +29,17 @@ function Sidebar() {
       </Link>
       <hr/>
       <div className="rooms">
-        {channels.map((channel, key) => (
+        {isSignedIn()
+          ?
+        channels.map((channel, key) => (
           <Link key={key} to={`/room/${channel.id}`}>
             {channel.name}
           </Link>
-        ))}
-      </div>
-      <div className="signin" >
-          <button id="login"
-            onClick={isSignedIn() ? () => logout().then((window.location.href = '/')) : login}>
-              {user?user.me.wca_id : "Sign in"}
-            </button>
+        ))
+          :
+        <span>
+          Rooms will appear here.
+        </span>}
       </div>
     </div>
   );

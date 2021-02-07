@@ -1,5 +1,5 @@
 //modified from https://github.com/saranshgrover/cubing-at-home/blob/master/src/logic/auth.js
-import {  WCA_UID } from "./wca-secrets";
+import {  WCA_UID } from './wca-secrets';
 
 export const localStorageKey = (key) => `WCA-Real-Time.${WCA_UID}.${key}`;
 
@@ -52,14 +52,14 @@ export const wcaAccessToken = () =>
 
 export const login = () => {
 
-    const params = new URLSearchParams({
+  const params = new URLSearchParams({
 		client_id: WCA_UID,
 		response_type: 'token',
 		redirect_uri: window.location.origin,
 		scope: 'public',
 	})
     
-    const url = `https://www.worldcubeassociation.org/oauth/authorize?${params}`;
+  const url = `https://www.worldcubeassociation.org/oauth/authorize?${params}`;
 
 	localStorage.setItem(localStorageKey('redirectPath'), window.location);
 
@@ -67,7 +67,7 @@ export const login = () => {
 }
 
 export const logout = () => {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
 		localStorage.removeItem(localStorageKey('accessToken'))
 		resolve()
 	})

@@ -25,16 +25,18 @@ function Spectator({room}) {
   }, [room, setAlreadySolving])
 
   useEffect(() => {
-    db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').onSnapshot(s => setRunner1(s.data()));
+    let info = db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').onSnapshot(s => setRunner1(s.data()));
+    return () => info();
   }, [room, setRunner1]);
 
   useEffect(() => {
-    db.collection('timer-rooms').doc(room).collection('runners').doc('runner2').onSnapshot(s => setRunner2(s.data()));
+    let info = db.collection('timer-rooms').doc(room).collection('runners').doc('runner2').onSnapshot(s => setRunner2(s.data()));
+    return () => info();
   }, [room, setRunner2]);
 
 
   useEffect(() => {
-    if (runner1['state'] === 'solving') {
+    if (runner1?.['state'] === 'solving') {
       setTimer1(0);
       const interval = setInterval(() => setTimer1(time => time + 10), 10);
       return () => clearInterval(interval);
@@ -42,7 +44,7 @@ function Spectator({room}) {
   }, [runner1, setTimer1]);
 
   useEffect(() => {
-    if (runner2['state'] === 'solving') {
+    if (runner2?.['state'] === 'solving') {
       setTimer2(0);
       const interval = setInterval(() => setTimer2(time => time + 10), 10);
       return () => clearInterval(interval);
@@ -58,11 +60,11 @@ function Spectator({room}) {
 
           <span>
             <h2>
-              {runner1['name'] !== '' ? runner1['name'] : 'RUNNER 1'}
+              {runner1?.['name'] !== '' ? runner1?.['name'] : 'RUNNER 1'}
             </h2>
             <h1>
-              {runner1['current-time'] !== undefined &&
-              (runner1['current-time'] === 0 ? (runner1['state'] === 'solving' ? (alreadySolving ? 'SOLVING' : formatTimer(timer1)) : runner1['state']) : formatTimer(runner1['current-time']))}
+              {runner1?.['current-time'] !== undefined &&
+              (runner1?.['current-time'] === 0 ? (runner1?.['state'] === 'solving' ? (alreadySolving ? 'SOLVING' : formatTimer(timer1)) : runner1?.['state']) : formatTimer(runner1?.['current-time']))}
             </h1>
           </span>
 
@@ -71,8 +73,8 @@ function Spectator({room}) {
               {runner2['name'] !== '' ? runner2['name'] : 'RUNNER 2'}
             </h2>
             <h1>
-              {runner2['current-time'] !== undefined &&
-              (runner2['current-time'] === 0 ? (runner2['state'] === 'solving' ? (alreadySolving ? 'SOLVING' : formatTimer(timer2)) : runner2['state']) : formatTimer(runner2['current-time']))}
+              {runner2?.['current-time'] !== undefined &&
+              (runner2?.['current-time'] === 0 ? (runner2?.['state'] === 'solving' ? (alreadySolving ? 'SOLVING' : formatTimer(timer2)) : runner2?.['state']) : formatTimer(runner2?.['current-time']))}
             </h1>
           </span>
 

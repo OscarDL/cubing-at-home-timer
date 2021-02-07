@@ -1,18 +1,18 @@
 import { useParams } from 'react-router-dom';
-import { TextField } from '@material-ui/core';
 import React, { useEffect, useState } from 'react';
 import { setInterval, clearInterval } from 'requestanimationframe-timer';
 
-import Spectator from './Spectator';
 import { db } from '../../firebase';
+import Spectator from './Spectator';
 
 import '../../Styles/Timer.css';
+import { isSignedIn } from '../../Logic/authorize';
 
 function formatTimer(timer) {
   return ((timer.toString()).substring(0, timer.toString().length - 3) || '0') + '.' + (timer < 100 && timer > 1 ? '0' : '') + ((timer.toString()).substring(timer.toString().length - 3, timer.toString().length - 1) || '00');
 }
 
-function Timer() {
+function Timer({user}) {
   const { roomId } = useParams();
   const [timer, setTimer] = useState(0);
   const [ready, setReady] = useState(false);
@@ -27,27 +27,29 @@ function Timer() {
   const [roomExists, setRoomExists] = useState(false);
 
   useEffect(() => {
+    !isSignedIn() && (window.location.href = '/');
+  }, []);
+
+  useEffect(() => {
     // Set name in db when user joins the room
-    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({
-      'name': (localStorage.getItem('name') !== null && localStorage.getItem('name')?.length > 0) ? localStorage.getItem('name') : ''
-    });
+    user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': user.me.name});
 
     // Try to reset db name when user leaves the page
     window.onbeforeunload = function() {
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': ''});
     }
 
-    // Reset db name & selected room highlight color when user leaves the room
+    // Reset db name & highlighted room background color when user leaves the room
     return () => {
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': ''});
-      document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = '#324191';
+      document.querySelectorAll(`.rooms > a`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)');
     }
-  }, [roomId]);
+  }, [user, roomId]);
 
   useEffect(() => {
     // Set the key only if the room exists & user has the correct key
     db.collection('timer-rooms').doc(roomId).onSnapshot(s => {
-      if(s.data() !== undefined) {
+      if(s.data() !== undefined && s.data() !== null) {
         setRoomExists(true);
         setKey(s.data().key);
         setRoomName(s.data().name);
@@ -57,8 +59,8 @@ function Timer() {
       }
     
       if (roomExists) { // Selected room highlight color
-        document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = '#4055aa';
-        document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = '#324191');
+        document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = 'rgba(255, 255, 255, 0.075)';
+        document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)');
       }
     });
     
@@ -66,12 +68,12 @@ function Timer() {
       if (roomExists) {
         // Set user ready state
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false, 'state': 'waiting'});
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => setReady(s.data().ready));
+        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => setReady(s.data()?.ready));
         
         // Set opponent name & ready state
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => {
-          setOpponentName(s.data().name);
-          setOpponentReady(s.data().ready);
+          setOpponentName(s.data()?.name);
+          setOpponentReady(s.data()?.ready);
         });
       }
     } else {
@@ -83,10 +85,6 @@ function Timer() {
     if (timerState === -1 || timerState === 3) {
       document.body.onkeyup = function(e) {
         if (e.keyCode === 32 && (document.activeElement.tagName !== 'INPUT')) {
-          (localStorage.getItem('name') === null || localStorage.getItem('name')?.length === 0)
-            ?
-          window.alert('Please enter your name before competing.')
-            :
           setTimerState(state => state + 1);
         }
       }
@@ -103,8 +101,7 @@ function Timer() {
     }
   }, [timerState, setTimerState]);
 
-  useEffect(() => {
-    
+  useEffect(() => {    
     // -1 = idle, 0 = ready, 1 = inspection, 2 = solving, 3 = done, 4 = reset
     if (timerState === -1) {
 
@@ -133,7 +130,7 @@ function Timer() {
             return (time - 1000);
           }),
         1000);
-      } else setRunnerState('Waiting for opponent to ready up...');
+      } else opponentName !== '' ? setRunnerState(`Waiting for ${opponentName} to ready up...`) : setRunnerState('Waiting for opponent to join...');
 
     } else if (timerState === 1) {
 
@@ -180,8 +177,7 @@ function Timer() {
       setTimerState(-1);
 
     }
-
-  }, [setRunnerState, timerState, opponentReady, setTimer, inSolve, roomId]);
+  }, [setRunnerState, timerState, opponentName, opponentReady, setTimer, inSolve, roomId]);
 
   useEffect(() => {
     (timerState === 3)
@@ -206,44 +202,34 @@ function Timer() {
         <h1>{roomName.toUpperCase()}</h1>
         {(key !== 'NO_KEY' && localStorage.getItem('key') === key && (localStorage.getItem('runner') === '1' || localStorage.getItem('runner') === '2'))
           ?
-        <>
-          <div className="runner__name">
-            <TextField
-              label={'Your name'}
-              defaultValue={localStorage.getItem('name')?.length > 0 ? localStorage.getItem('name') : ''}
-              helperText='Help live viewers know who you are.'
-              onBlur={e => {
-                localStorage.setItem('name', e.target.value);
-                db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': e.target.value});
-              }}
-            />
-          </div>
+        <div className="timer">
+          <span className="timer__time">
+            <h1>
+              {(timerState === 2 || timerState === 3) ? formatTimer(timer) : timer / 1000}
+            </h1>
+          </span>
 
-          <div className="timer">
-            <span className="timer__time">
-              <h1>
-                {(timerState === 2 || timerState === 3) ? formatTimer(timer) : timer / 1000}
-              </h1>
-            </span>
-
-            <h2 className="runnerState">
-              {runnerState}
-              {(timerState === 0 && !opponentReady) && <><br/>Press escape to unready.</>}
+          <h2 className="runnerState">
+            {runnerState}
+            {(timerState === 0 && !opponentReady) && <><br/>Press escape to unready.</>}
+          </h2>
+          
+          {(timerState < 1 || timerState > 3)
+            &&
+          <span>
+            <h2 style={{color: ready ? 'seagreen' : 'red'}}>
+              YOU - {ready ? 'READY' : 'NOT READY'}
             </h2>
-            
-            {(timerState < 1 || timerState > 3)
-              &&
-            <span>
-              <h2 style={{color: ready ? 'lightgreen' : 'red'}}>
-                YOU: {ready ? 'READY' : 'NOT READY'}
-              </h2>
-              <br/>
-              <h2 style={{color: opponentReady ? 'lightgreen' : 'red'}}>
-                {opponentName === '' ? 'OPPONENT: ' : (opponentName + ': ')}{opponentReady ? 'READY' : 'NOT READY'}
-              </h2>
-            </span>}
-          </div>
-        </>
+            <br/>
+            {opponentName !== ''
+              ? 
+            <h2 style={{color: opponentReady ? 'seagreen' : 'red'}}>
+              {`${opponentName} - ${opponentReady ? 'READY' : 'NOT READY'}`}
+            </h2>
+              :
+            <h2 style={{color: 'orange'}}>Opponent has not joined yet</h2>}
+          </span>}
+        </div>
           :
         <Spectator room={roomId}/>}
       </>
