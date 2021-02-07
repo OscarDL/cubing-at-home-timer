@@ -9,43 +9,12 @@ import Sidebar from './Sidebar';
 
 import '../Styles/App.css';
 
-function parseURLParams(url) {
-  var queryStart = url.indexOf('?') + 1,
-      queryEnd   = url.length,
-      query = url.slice(queryStart, queryEnd),
-      pairs = query.replace(/\+/g, ' ').split('&'),
-      params = {}, i, n, v, nv;
-
-  if (query === url || query === '') return;
-
-  for (i = 0; i < pairs.length; i++) {
-      nv = pairs[i].split('=', 2);
-      n = decodeURIComponent(nv[0]);
-      v = decodeURIComponent(nv[1]);
-
-      if (!params.hasOwnProperty(n)) params[n] = [];
-      params[n].push(nv.length === 2 ? v : null);
-  }
-  return params;
-}
-
 function App() {
 
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    (parseURLParams(window.location.href)?.key !== undefined)
-      &&
-    localStorage.setItem('key', parseURLParams(window.location.href)?.key);
-    
-    (parseURLParams(window.location.href)?.runner !== undefined)
-      &&
-    localStorage.setItem('runner', parseURLParams(window.location.href)?.runner);
-
-    window.history.replaceState(null, null, window.location.pathname);
-
     getMe()?.then(res => setUser(res));
-
     document.addEventListener('click', function(e) {
       (document.querySelector('.profile > ul') !== undefined && document.querySelector('.profile > ul') !== null)
         &&
@@ -72,10 +41,10 @@ function App() {
                 <li>
                   <a target='_blank' rel='noreferrer' href="https://cubingathome.com">Cubing at Home</a>
                 </li>
-                {(user.me.wca_id !== undefined && user.me.wca_id !== null)
+                {user.me.url
                   &&
                 <li>
-                  <a target='_blank' rel='noreferrer' href={`https://www.worldcubeassociation.org/persons/${user.me.wca_id}`}>My WCA profile</a>
+                  <a target='_blank' rel='noreferrer' href={user.me.url}>My WCA profile</a>
                 </li>}
                 <li onClick={() => logout().then(window.location.href = '/')}>
                   <span>Log out</span>

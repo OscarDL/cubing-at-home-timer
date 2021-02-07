@@ -15,6 +15,7 @@ function formatTimer(timer) {
 function Timer({user}) {
   const { roomId } = useParams();
   const [timer, setTimer] = useState(0);
+  const [runner, setRunner] = useState(0);
   const [ready, setReady] = useState(false);
   const [inSolve, setInSolve] = useState(false);
   const [timerState, setTimerState] = useState(-1);
@@ -22,36 +23,30 @@ function Timer({user}) {
   const [opponentName, setOpponentName] = useState('');
   const [opponentReady, setOpponentReady] = useState(0);
 
-  const [key, setKey] = useState(''); // Don't set to null --- localStorage default inexistant keys to null, leading to true comparison without any key
   const [roomName, setRoomName] = useState(null);
   const [roomExists, setRoomExists] = useState(false);
 
   useEffect(() => {
+    setRunner(0);
+
     !isSignedIn() && (window.location.href = '/');
-  }, []);
+    
+    user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => (s.data().id === user.me.id) && setRunner(1));
+    user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => (s.data().id === user.me.id) && setRunner(2));
+  }, [user, roomId, setRunner]);
 
   useEffect(() => {
     // Set name in db when user joins the room
-    user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': user.me.name});
+    (runner !== 0) && user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'name': user.me.name});
 
-    // Try to reset db name when user leaves the page
-    window.onbeforeunload = function() {
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': ''});
-    }
-
-    // Reset db name & highlighted room background color when user leaves the room
-    return () => {
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'name': ''});
-      document.querySelectorAll(`.rooms > a`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)');
-    }
-  }, [user, roomId]);
+    // Reset highlighted room background color when user leaves the room
+    return () => document.querySelectorAll(`.rooms > a`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)')
+  }, [user, roomId, runner]);
 
   useEffect(() => {
-    // Set the key only if the room exists & user has the correct key
     db.collection('timer-rooms').doc(roomId).onSnapshot(s => {
       if(s.data() !== undefined && s.data() !== null) {
         setRoomExists(true);
-        setKey(s.data().key);
         setRoomName(s.data().name);
       } else {
         setRoomName('');
@@ -64,22 +59,18 @@ function Timer({user}) {
       }
     });
     
-    if (localStorage.getItem('key') !== null && localStorage.getItem('runner') !== null) {
-      if (roomExists) {
-        // Set user ready state
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false, 'state': 'waiting'});
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).onSnapshot(s => setReady(s.data()?.ready));
-        
-        // Set opponent name & ready state
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(localStorage.getItem('runner') === '1' ? '2' : '1')).onSnapshot(s => {
-          setOpponentName(s.data()?.name);
-          setOpponentReady(s.data()?.ready);
-        });
-      }
-    } else {
-      setKey('NO_KEY'); // Prevent spectator mode from triggering once for runners
+    if (runner !== 0 && roomExists) {
+      // Set user ready state
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'ready': false, 'state': 'waiting'});
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).onSnapshot(s => setReady(s.data()?.ready));
+      
+      // Set opponent name & ready state
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(runner === 1 ? '2' : '1')).onSnapshot(s => {
+        setOpponentName(s.data()?.name);
+        setOpponentReady(s.data()?.ready);
+      });
     }
-  }, [setKey, roomId, roomExists, setOpponentName, setOpponentReady, setRoomExists]);
+  }, [roomId, runner, roomExists, setOpponentName, setOpponentReady, setRoomExists]);
 
   useEffect(() => {
     if (timerState === -1 || timerState === 3) {
@@ -106,12 +97,12 @@ function Timer({user}) {
     if (timerState === -1) {
 
       setRunnerState('Press space to ready up.');
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false, 'state': 'waiting', 'current-time': 0});
+      runner !== 0 && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'ready': false, 'state': 'waiting', 'current-time': 0});
 
     } else if (timerState === 0) {
 
       // Update & reset current-time in db here as well in case page is refreshed without clearing the timer
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
         'current-time': 0,
         'state': 'ready',
         'ready': true
@@ -138,7 +129,7 @@ function Timer({user}) {
 
       if (opponentReady) {
         setTimer(15000); // if condition to not restart inspection time if opponent finishes first (resetting ready state with useEffect dependency)
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'state': 'inspecting'});
+        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'state': 'inspecting'});
 
         const interval = setInterval(() =>
           setTimer(time => {
@@ -156,7 +147,7 @@ function Timer({user}) {
       setInSolve(true);
       setRunnerState('Press any key to stop the timer.');
 
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'state': 'solving'});
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'state': 'solving'});
 
       if (!inSolve) setTimer(0); // if condition to not restart solve time if opponent finishes first (resetting ready state with useEffect dependency)
       const interval = setInterval(() => setTimer(time => time + 10), 10);
@@ -167,22 +158,22 @@ function Timer({user}) {
       setInSolve(false);
       setRunnerState('Press space to clear the timer.');
 
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'ready': false});
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'ready': false});
 
     } else if (timerState === 4) {
 
       setTimer(0);
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'state': 'waiting', 'current-time': 0});
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'state': 'waiting', 'current-time': 0});
 
       setTimerState(-1);
 
     }
-  }, [setRunnerState, timerState, opponentName, opponentReady, setTimer, inSolve, roomId]);
+  }, [roomId, runner, inSolve, setTimer, timerState, opponentName, opponentReady, setRunnerState]);
 
   useEffect(() => {
     (timerState === 3)
       &&
-    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({
+    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
       'timer-started': false,
       'current-time': timer,
       'ready': false
@@ -190,17 +181,17 @@ function Timer({user}) {
 
     (timerState === 4)
       &&
-    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+localStorage.getItem('runner')).update({'current-time': 0});
-  }, [timer, roomId, timerState]);
+    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'current-time': 0});
+  }, [timer, roomId, runner, timerState]);
 
   return (
     <>
-      {roomName !== null && // To avoid displaying "This room does not exist" while an existing room is loading
+      {roomName !== null &&
       (roomExists
         ?
       <>
         <h1>{roomName.toUpperCase()}</h1>
-        {(key !== 'NO_KEY' && localStorage.getItem('key') === key && (localStorage.getItem('runner') === '1' || localStorage.getItem('runner') === '2'))
+        {runner !== 0
           ?
         <div className="timer">
           <span className="timer__time">
