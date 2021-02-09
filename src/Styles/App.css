@@ -101,8 +101,10 @@
 }
 .welcome > img {
   margin: 0 auto;
-  max-width: 20%;
+  max-width: 20vw;
+  max-height: 40vh;
   min-width: 120px;
+  min-height: 120px;
 }
 .welcome > * { padding: 30px 10px 20px; }
 .welcome > span > * { padding: 10px 0; }

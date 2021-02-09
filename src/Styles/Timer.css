@@ -26,6 +26,7 @@
 .spectator__runners > span {
   flex-direction: column;
   text-align: center;
+  margin: 0 20px;
   display: flex;
 }
 .spectator__runners > span > * { padding: 20px; }

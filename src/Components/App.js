@@ -68,19 +68,14 @@ function App() {
         }
         <Switch>
           <Route exact path="/">
-            {isSignedIn()
-              ?
             <span className="welcome">
               <img src="https://www.cubingathome.com/logo.png" alt="logo"/>
               <span>
                 <h1>Welcome to the C@H online timer!</h1>
                 <h2>Please select a room on the left side.</h2>
               </span>
+              {!isSignedIn() && <h1>Note: You need to login in order to compete.</h1>}
             </span>
-              :
-            <span className="welcome" style={{justifyContent: 'center'}}>
-              <h1>Please sign in with your WCA account<br/>in order to join head-to-head rooms.</h1>
-            </span>}
           </Route>
           <Route path="/room/:roomId">
             <Timer user={user}/>
