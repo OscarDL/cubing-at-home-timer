@@ -30,7 +30,6 @@ function Timer({user}) {
     setRunner(0);
     user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
     user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
-    window.location.href.includes('id=73') && setRunner(2);
   }, [user, roomId, setRunner]);
 
   useEffect(() => {

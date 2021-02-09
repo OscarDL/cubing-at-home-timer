@@ -19,6 +19,11 @@
 .env.development.local
 .env.test.local
 .env.production.local
+.eslintcache
+
+/.firebase
+.firebaserc
+firebase.json
 
 npm-debug.log*
 yarn-debug.log*
