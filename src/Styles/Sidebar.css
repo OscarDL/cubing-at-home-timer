@@ -3,6 +3,13 @@
   color: white;
   padding: 10px;
 }
+.sidebarBtn {
+  position: absolute;
+  display: none;
+  padding: 15px;
+  left: 0;
+  top: 0;
+}
 
 .sidebar > hr {
   background-color: #666;
@@ -53,6 +60,14 @@
 .sidebar > .rooms > a:hover, .sidebar > .rooms > span:hover {
   background-color: rgba(255, 255, 255, 0.075) !important;
   cursor: pointer;
+}
+
+@media(max-width: 992px) {
+  .sidebar {
+    display: none;
+    z-index: 1;
+  }
+  .sidebarBtn { display: block; }
 }
 
 @media(prefers-color-scheme: dark) {

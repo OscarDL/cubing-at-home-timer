@@ -14,8 +14,21 @@
 }
 
 .runnerState {
-  font-size: 32px !important;
-  margin: 10px 0 !important;
+  font-size: 32px;
+  margin: 10px 0;
+}
+
+@media(max-height: 640px) {
+  .timer > .timer__time {
+    line-height: 90px;
+    font-size: 60px;
+  }
+  .timer > .runnerState {
+    font-size: 24px;
+  }
+  .timer > span > h2 {
+    font-size: 20px;
+  }
 }
 
 .spectator__runners {
@@ -32,3 +45,14 @@
 .spectator__runners > span > * { padding: 20px; }
 .spectator__runners > span > h1 { font-size: 60px; }
 .spectator__runners > span > h2 { font-size: 36px; }
+
+@media(max-width: 992px) {
+  .spectator__runners {
+    flex-direction: column;
+  }
+  @media(min-height: 768px) {
+    .spectator__runners > span {
+      margin: 50px 0;
+    }
+  }
+}

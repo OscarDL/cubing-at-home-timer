@@ -111,14 +111,20 @@
 
 .body > h1 {
   justify-content: center;
-  padding: 20px 0;
+  padding: 10px 0;
   display: flex;
 }
 
-.runner__name {
-  justify-content: center;
-  margin-top: 20px;
-  display: flex;
+@media(max-width: 992px) {
+  .profile__name {
+    display: none !important;
+  }
+  .profile__arrow {
+    display: none !important;
+  }
+  .profile > ul {
+    width: auto;
+  }
 }
 
 @media(prefers-color-scheme: dark) {

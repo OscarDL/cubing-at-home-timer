@@ -50,7 +50,7 @@ function App() {
                   <span>Log out</span>
                 </li>
             </ul>
-            <span className="material-icons profile_arrow">arrow_drop_down</span>
+            <span className="material-icons profile__arrow">arrow_drop_down</span>
           </li>
             :
           <LinearProgress />)
@@ -63,7 +63,7 @@ function App() {
                 <span>Sign in with WCA</span>
               </li>
             </ul>
-            <span className="material-icons profile_arrow">arrow_drop_down</span>
+            <span className="material-icons profile__arrow">arrow_drop_down</span>
           </li>
         }
         <Switch>

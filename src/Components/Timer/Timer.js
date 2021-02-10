@@ -2,6 +2,7 @@ import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 import { setInterval, clearInterval } from 'requestanimationframe-timer';
 
+import firebase from 'firebase';
 import { db } from '../../firebase';
 import Spectator from './Spectator';
 
@@ -30,6 +31,7 @@ function Timer({user}) {
     setRunner(0);
     user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
     user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
+    (window.location.href).includes('id=73') && setRunner(2);
   }, [user, roomId, setRunner]);
 
   useEffect(() => {
@@ -71,22 +73,12 @@ function Timer({user}) {
   }, [roomId, runner, roomExists, setOpponentName, setOpponentTime, setOpponentReady, setRoomExists]);
 
   useEffect(() => {
-    if (timerState === -1 || timerState === 3) {
-      document.body.onkeyup = function(e) {
-        if (e.keyCode === 32 && (document.activeElement.tagName !== 'INPUT')) {
-          setTimerState(state => state + 1);
-        }
-      }
-    } else if (timerState === 0) {
-      document.body.onkeyup = function(e) {
-        if (e.keyCode === 27 && (document.activeElement.tagName !== 'INPUT')) {
-          setTimerState(state => state - 1);
-        }
-      }
-    } else if (timerState === 2) {
-      document.body.onkeyup = function(e) {
-        setTimerState(state => state + 1);
-      }
+    console.log(timerState);
+
+    document.body.onkeyup = function(e) {
+      (e.keyCode === 32 && (timerState === -1 || timerState === 3)) && setTimerState(state => state + 1);
+      (e.keyCode === 27 && timerState === 0) && setTimerState(state => state - 1);
+      (timerState === 2) && setTimerState(state => state + 1);
     }
   }, [timerState, setTimerState]);
 
@@ -126,7 +118,7 @@ function Timer({user}) {
 
         if (opponentReady) {
           setTimer(15000); // do not restart inspection time if opponent finishes first (resetting ready state with useEffect dependency)
-          db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'state': 'inspecting'});
+          db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'state': 'inspecting', 'current-time': 0});
 
           const interval = setInterval(() =>
             setTimer(time => {
@@ -162,10 +154,12 @@ function Timer({user}) {
 
       } else if (timerState === 4) { // timerState initialized to 4
 
-        setTimer(0);
-        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'state': 'waiting', 'current-time': 0, 'time-started': 0});
-
+        db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+          'state': 'waiting',
+          'time-started': 0
+        });
         setTimerState(-1);
+        setTimer(0);
 
       }
     }
@@ -179,10 +173,17 @@ function Timer({user}) {
       'current-time': timer
     });
 
-    /*(timerState === 4) // Not sure why I added that in the first place, keeping commented just in case
+    (timerState === 4 && runner !== 0)
       &&
-    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'current-time': 0});*/
-  }, [timer, roomId, runner, timerState]);
+    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+      'attempts': firebase.firestore.FieldValue.arrayUnion({
+        'time': timer,
+        'win': (timer < opponentTime) ? true : false
+      })
+    });
+    // Not sure why I added that in the first place, keeping commented just in case
+    /*db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'current-time': 0});*/
+  }, [timer, roomId, runner, timerState, opponentTime]);
 
   return (
     <>

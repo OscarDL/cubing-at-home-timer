@@ -53,7 +53,7 @@ function Spectator({room}) {
           </h2>
           <h1>
             {runner1?.['current-time'] !== undefined &&
-            ((runner1?.['current-time'] === 0)
+            ((runner1?.['current-time'] === 0 || runner1?.['state'] === 'waiting')
               ?
             (runner1?.['timer-started'] === true ? formatTimer(timer1) : runner1?.['state'])
               :
@@ -69,7 +69,7 @@ function Spectator({room}) {
           </h2>
           <h1>
             {runner2?.['current-time'] !== undefined &&
-            (runner2?.['current-time'] === 0
+            ((runner2?.['current-time'] === 0 || runner2?.['state'] === 'waiting')
               ?
             (runner2?.['timer-started'] === true ? formatTimer(timer2) : runner2?.['state'])
               :

@@ -17,23 +17,30 @@ function Sidebar() {
         })
       ))
     ));
+    document.addEventListener('touchend', function(e) { // Hacky way of handling sidebar on mobile
+      ((e.target.className).includes('room')) && (setTimeout(function() { document.querySelector('.sidebar').style.display = 'none' }, 75));
+      ((e.target.className).includes('sidebarBtn')) && (setTimeout(function() { document.querySelector('.sidebar').style.display = 'block' }, 75));
+    }, false);
   }, []);
 
   return (
-    <div className="sidebar">
-      <Link to='/' className="branding">
-        <img src="https://www.cubingathome.com/logo.png" alt="logo"/>
-        <h1>TIMER</h1>
-      </Link>
-      <hr/>
-      <div className="rooms">
-        {channels.map((channel, key) => (
-          <Link key={key} to={`/room/${channel.id}`}>
-            {channel.name}
-          </Link>
-        ))}
+    <>
+      <span className="material-icons sidebarBtn">menu</span>
+      <div className="sidebar">
+        <Link to='/' className="branding room">
+          <img className="room" src="https://www.cubingathome.com/logo.png" alt="logo"/>
+          <h1 className="room">TIMER</h1>
+        </Link>
+        <hr/>
+        <div className="rooms">
+          {channels.map((channel, key) => (
+            <Link key={key} className="room" to={`/room/${channel.id}`}>
+              {channel.name}
+            </Link>
+          ))}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
