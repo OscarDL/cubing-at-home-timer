@@ -31,7 +31,6 @@ function Timer({user}) {
     setRunner(0);
     user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
     user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
-    (window.location.href).includes('id=73') && setRunner(2);
   }, [user, roomId, setRunner]);
 
   useEffect(() => {
@@ -87,6 +86,7 @@ function Timer({user}) {
       // -1 = idle, 0 = ready, 1 = inspection, 2 = solving, 3 = done, 4 = reset
       if (timerState === -1) {
 
+        setTimer(0);
         setRunnerState('Press space to ready up.'); // handle update({'ready': false}) here in case presses escape to unready
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'ready': false, 'state': 'waiting'});
 
@@ -159,7 +159,6 @@ function Timer({user}) {
           'time-started': 0
         });
         setTimerState(-1);
-        setTimer(0);
 
       }
     }
@@ -173,7 +172,7 @@ function Timer({user}) {
       'current-time': timer
     });
 
-    (timerState === 4 && runner !== 0)
+    (timerState === 4 && runner !== 0 && timer > 0)
       &&
     db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
       'attempts': firebase.firestore.FieldValue.arrayUnion({
