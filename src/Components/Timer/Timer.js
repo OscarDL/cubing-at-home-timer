@@ -27,11 +27,8 @@ function Timer({user}) {
   const [roomName, setRoomName] = useState(null);
   const [roomExists, setRoomExists] = useState(false);
 
-  useEffect(() => {
-    setRunner(0);
-    user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
-    user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
-  }, [user, roomId, setRunner]);
+
+  /* ROOM INFO */
 
   useEffect(() => {
     // Set name in db when user joins the room
@@ -56,6 +53,20 @@ function Timer({user}) {
         document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)');
       }
     });
+  }, [roomId, roomExists, setRoomExists]);
+
+  useEffect(() => {
+    setRunner(0);
+    if (roomExists) {
+      user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
+      user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
+    }
+  }, [user, roomId, roomExists, setRunner]);
+
+
+  /* RUNNERS INFO */
+
+  useEffect(() => {
     
     if (runner !== 0 && roomExists) {
       // Set user ready state
@@ -69,11 +80,12 @@ function Timer({user}) {
         setOpponentTime(s.data()?.['current-time']);
       });
     }
-  }, [roomId, runner, roomExists, setOpponentName, setOpponentTime, setOpponentReady, setRoomExists]);
+  }, [roomId, runner, roomExists, setOpponentName, setOpponentTime, setOpponentReady]);
+
+
+  /* TIMER STATES */
 
   useEffect(() => {
-    console.log(timerState);
-
     document.body.onkeyup = function(e) {
       (e.keyCode === 32 && (timerState === -1 || timerState === 3)) && setTimerState(state => state + 1);
       (e.keyCode === 27 && timerState === 0) && setTimerState(state => state - 1);

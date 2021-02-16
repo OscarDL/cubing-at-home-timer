@@ -17,9 +17,12 @@ function Sidebar() {
         })
       ))
     ));
-    document.addEventListener('touchend', function(e) { // Hacky way of handling sidebar on mobile
-      ((e.target.className).includes('room')) && (setTimeout(function() { document.querySelector('.sidebar').style.display = 'none' }, 75));
-      ((e.target.className).includes('sidebarBtn')) && (setTimeout(function() { document.querySelector('.sidebar').style.display = 'block' }, 75));
+
+    document.addEventListener('click', function(e) {
+      if (window.innerWidth < 992) {
+        ((e.target.className).includes('room')) && (document.querySelector('.sidebar').style.display = 'none');
+        ((e.target.className).includes('sidebarBtn')) && (document.querySelector('.sidebar').style.display = 'block');
+      }
     }, false);
   }, []);
 

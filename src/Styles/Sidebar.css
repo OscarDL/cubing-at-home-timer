@@ -62,12 +62,24 @@
   cursor: pointer;
 }
 
-@media(max-width: 992px) {
+@media(max-width: 991px) {
   .sidebar {
     display: none;
     z-index: 1;
   }
-  .sidebarBtn { display: block; }
+  .sidebarBtn {
+    cursor: pointer;
+    display: block;
+  }
+}
+
+@media(min-width: 992px) {
+  .sidebar {
+    display: block !important;
+  }
+  .sidebarBtn {
+    display: none !important;
+  }
 }
 
 @media(prefers-color-scheme: dark) {

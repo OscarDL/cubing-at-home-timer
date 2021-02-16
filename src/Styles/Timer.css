@@ -46,7 +46,7 @@
 .spectator__runners > span > h1 { font-size: 60px; }
 .spectator__runners > span > h2 { font-size: 36px; }
 
-@media(max-width: 992px) {
+@media(max-width: 991px) {
   .spectator__runners {
     flex-direction: column;
   }
