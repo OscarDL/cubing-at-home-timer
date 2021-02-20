@@ -37,7 +37,7 @@ function Sidebar() {
         <hr/>
         <div className="rooms">
           {channels.map((channel, key) => (
-            <Link key={key} className="room" to={`/room/${channel.id}`}>
+            <Link key={key} title={channel.name} className="room" to={`/room/${channel.id}`}>
               {channel.name}
             </Link>
           ))}

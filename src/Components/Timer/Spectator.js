@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { setInterval, clearInterval } from 'requestanimationframe-timer';
 
 import { db } from '../../firebase';
 
