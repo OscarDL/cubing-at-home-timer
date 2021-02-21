@@ -53,13 +53,13 @@ export const wcaAccessToken = () =>
 export const login = () => {
 
   const params = new URLSearchParams({
-		client_id: WCA_UID,
+		client_id: 'example-application-id', //WCA_UID,
 		response_type: 'token',
 		redirect_uri: window.location.origin,
 		scope: 'public',
 	})
     
-  const url = `https://www.worldcubeassociation.org/oauth/authorize?${params}`;
+  const url = `https://staging.worldcubeassociation.org/oauth/authorize?${params}`;
 
 	localStorage.setItem(localStorageKey('redirectPath'), window.location);
 

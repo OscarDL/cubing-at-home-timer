@@ -7,7 +7,7 @@ export function getMe() {
   null
     :
   fetch (
-    'https://www.worldcubeassociation.org/api/v0/me/',
+    'https://staging.worldcubeassociation.org/api/v0/me/',
     {
       headers: new Headers({
         Authorization: `Bearer ${wcaAccessToken()}`,

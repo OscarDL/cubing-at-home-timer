@@ -30,9 +30,9 @@ function Timer({user}) {
   /* ROOM INFO */
 
   useEffect(() => {
+    setRunner(0);
     db.collection('timer-rooms').doc(roomId).onSnapshot(s => {
       if(s.data() !== undefined && s.data() !== null) {
-        setRunner(0);
         setRoomExists(true);
         setRoomName(s.data().name);
         document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = 'rgba(255, 255, 255, 0.075)';
@@ -46,8 +46,6 @@ function Timer({user}) {
     if (roomExists) {
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
-      window.location.href.includes('id=1') && setRunner(1);
-      window.location.href.includes('id=2') && setRunner(2);
     }
   }, [user, roomId, roomExists, setRunner]);
 
@@ -85,12 +83,12 @@ function Timer({user}) {
         setRunnerState('Waiting for your judge to ready up.');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
-        document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
+        /*document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
           db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
             'ready': true,
             'timer-state': 0,
             'state': 'ready'
-          });
+          });*/
 
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
           'ready': false,
@@ -114,12 +112,12 @@ function Timer({user}) {
         setRunnerState('Scrambling...');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
-        document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
+        /*document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
           db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
             'ready': true,
             'timer-state': 2,
             'state': 'ready'
-          });
+          });*/
 
       } else if (timerState === 2) {
 
@@ -148,6 +146,16 @@ function Timer({user}) {
 
         if (opponentReady) {
           setTimer(15000); // do not restart inspection time if opponent finishes first (resetting ready state with useEffect dependency)
+
+          /*document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
+            db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+              'ready': false,
+              'timer-state': 4,
+              'state': 'solving',
+              'timer-started': true,
+              'time-started': Date.now()
+            });*/
+
           const interval = setInterval(() =>
             setTimer(time => {
               if (time <= 1000) {
@@ -183,12 +191,12 @@ function Timer({user}) {
         setRunnerState('Waiting for judge to clear your timer.');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
-        document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
+        /*document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
           db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
             'current-time': 0,
             'timer-state': -1,
             'timer-started': false
-          });
+          });*/
       }
     }
   }, [roomId, runner, inSolve, setTimer, timerState, opponentName, opponentReady, setRunnerState]);
