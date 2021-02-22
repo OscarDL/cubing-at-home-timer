@@ -7,7 +7,11 @@
   display: flex;
   flex-grow: 1;
 }
-.timer > * { padding: 10px 0; }
+.timer > * {
+  padding: 10px 0;
+  user-select: none;
+}
+
 .timer > .timer__time > h1:not(.scramble) {
   line-height: 200px;
   font-size: 160px;
@@ -24,7 +28,7 @@
 }
 
 @media(max-height: 640px) {
-  .timer > .timer__time > h1 {
+  .timer > .timer__time > h1:not(.scramble) {
     line-height: 120px !important;
     font-size: 120px !important;
   }

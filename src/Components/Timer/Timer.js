@@ -18,6 +18,7 @@ function Timer({user}) {
   const [ready, setReady] = useState(false);
   const [inSolve, setInSolve] = useState(false);
   const [scramble, setScramble] = useState(null);
+  const [currentTime, setCurrentTime] = useState(0);
   const [timerState, setTimerState] = useState(null);
   const [runnerState, setRunnerState] = useState('');
   const [opponentTime, setOpponentTime] = useState(0);
@@ -50,8 +51,6 @@ function Timer({user}) {
     if (roomExists) {
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
-      window.location.href.includes('id=1') && setRunner(1);
-      window.location.href.includes('id=2') && setRunner(2);
     }
   }, [user, roomId, roomExists, setRunner]);
 
@@ -66,16 +65,17 @@ function Timer({user}) {
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).onSnapshot(s => {
         setReady(s.data()?.ready);
         setTimerState(s.data()?.['timer-state']);
+        s.data()?.['current-time'] > 0 && setCurrentTime(s.data()?.['current-time']);
       });
       
       // Set opponent name & ready state
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(runner === 1 ? '2' : '1')).onSnapshot(s => {
         setOpponentName(s.data()?.name);
-        setOpponentReady(s.data()?.ready);
         setOpponentTime(s.data()?.['current-time']);
+        s.data()?.state !== 'solving' && setOpponentReady(s.data()?.ready);
       });
     }
-  }, [user, roomId, runner, roomExists, setOpponentName, setOpponentTime, setOpponentReady]);
+  }, [user, roomId, runner, roomExists, setCurrentTime, setOpponentName, setOpponentTime, setOpponentReady]);
 
 
   /* TIMER STATES */
@@ -83,9 +83,11 @@ function Timer({user}) {
   useEffect(() => {
     if (runner !== 0 && timerState !== null) {
       // -1: idle, 0: ready - waiting for scrambles, 1: scrambling, 2: ready - waiting for opponent, 3: inspection, 4: solving, 5: done
+      document.body.onkeyup = () => null;
       if (timerState === -1) {
 
         setTimer(0);
+        setCurrentTime(0);
         setRunnerState('Waiting for your judge to ready up.');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
@@ -98,9 +100,10 @@ function Timer({user}) {
 
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
           'ready': false,
-          'timer-state': -1,
           'time-started': 0,
-          'state': 'waiting'
+          'current-time': 0,
+          'state': 'waiting',
+          'timer-started': false
         });
 
       } else if (timerState === 0) {
@@ -128,6 +131,7 @@ function Timer({user}) {
       } else if (timerState === 2) {
 
         if(opponentReady) {
+
           setTimer(3000);
           setRunnerState('Starting in...');
 
@@ -144,18 +148,23 @@ function Timer({user}) {
               return (time - 1000);
             }),
           1000);
+
+          return () => clearInterval(interval);
+
         } else setRunnerState(`Waiting for ${opponentName || 'opponent'} to ready up...`);
 
       } else if (timerState === 3) {
 
-        setRunnerState('Inspection ends in');
+        setRunnerState('Press space to start solving.');
+
+        document.body.onkeyup = (e) => e.keyCode === 32 && setTimer(10);
 
         if (opponentReady) {
           setTimer(15000); // do not restart inspection time if opponent finishes first (resetting ready state with useEffect dependency)
 
           const interval = setInterval(() =>
             setTimer(time => {
-              if (time <= 1000) {
+              if (time <= 10) {
                 db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
                   'ready': false,
                   'timer-state': 4,
@@ -165,9 +174,11 @@ function Timer({user}) {
                 });
                 clearInterval(interval);
               }
-              return (time - 1000);
+              return (time - 10);
             }),
-          1000);
+          10);
+
+          return () => clearInterval(interval);
         }
 
       } else if (timerState === 4) {
@@ -196,13 +207,13 @@ function Timer({user}) {
           });*/
       }
     }
-  }, [roomId, runner, inSolve, setTimer, timerState, opponentName, opponentReady, setRunnerState]);
+  }, [roomId, runner, inSolve, setTimer, timerState, setCurrentTime, opponentName, opponentReady, setRunnerState]);
 
   useEffect(() => {
     if (timerState === 5 && runner !== 0) {
       timer > 0 && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'current-time': timer});
 
-      opponentTime > 0
+      (timer > 0 && opponentTime > 0)
         &&
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
         'attempts': firebase.firestore.FieldValue.arrayUnion({
@@ -225,14 +236,14 @@ function Timer({user}) {
           ?
         <div className="timer">
           <span className="timer__time">
-            <h1 style={{color: (timerState === 5 && opponentTime > 0) ? (opponentTime > timer ? 'limegreen' : 'red') : 'inherit'}} className={timerState === 1 ? 'scramble' : ''}>
-              {timerState !== null && ((timerState === 4 || timerState === 5) ? formatTimer(timer) : timerState === 1 ? scramble : timer/1000)}
+            <h1 style={{color: (timerState === 5 && opponentTime > 0) ? (opponentTime > currentTime || timer ? 'limegreen' : 'red') : 'inherit'}} className={timerState === 1 ? 'scramble' : ''}>
+              {timerState !== null && ((timerState === 4 || timerState === 5) ? formatTimer(currentTime || timer) : timerState === 1 ? scramble : Math.ceil(timer/1000))}
             </h1>
           </span>
 
           <h2 className="runnerState">
             {(timerState === 5 && opponentTime > 0) && <>{opponentName || 'Opponent'}'s time: 
-              <span style={{color: opponentTime > timer ? 'red' : 'limegreen'}}> {formatTimer(opponentTime)}</span><br/><br/></>}
+              <span style={{color: opponentTime > currentTime || timer ? 'red' : 'limegreen'}}> {formatTimer(opponentTime)}</span><br/><br/></>}
             {runnerState}
           </h2>
           
