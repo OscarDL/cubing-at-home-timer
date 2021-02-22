@@ -17,6 +17,7 @@ function Timer({user}) {
   const [runner, setRunner] = useState(0);
   const [ready, setReady] = useState(false);
   const [inSolve, setInSolve] = useState(false);
+  const [scramble, setScramble] = useState(null);
   const [timerState, setTimerState] = useState(null);
   const [runnerState, setRunnerState] = useState('');
   const [opponentTime, setOpponentTime] = useState(0);
@@ -33,19 +34,24 @@ function Timer({user}) {
     setRunner(0);
     db.collection('timer-rooms').doc(roomId).onSnapshot(s => {
       if(s.data() !== undefined && s.data() !== null) {
+
         setRoomExists(true);
         setRoomName(s.data().name);
+        setScramble(s.data().currScramble);
         document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = 'rgba(255, 255, 255, 0.075)';
         document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)');
+
       } else setRoomName('');
     });
     return () => document.querySelectorAll(`.rooms > a`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)');
-  }, [roomId, setRoomName, setRoomExists]);
+  }, [roomId, roomExists, setScramble, setRoomName, setRoomExists]);
 
   useEffect(() => {
     if (roomExists) {
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
+      window.location.href.includes('id=1') && setRunner(1);
+      window.location.href.includes('id=2') && setRunner(2);
     }
   }, [user, roomId, roomExists, setRunner]);
 
@@ -147,15 +153,6 @@ function Timer({user}) {
         if (opponentReady) {
           setTimer(15000); // do not restart inspection time if opponent finishes first (resetting ready state with useEffect dependency)
 
-          /*document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
-            db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-              'ready': false,
-              'timer-state': 4,
-              'state': 'solving',
-              'timer-started': true,
-              'time-started': Date.now()
-            });*/
-
           const interval = setInterval(() =>
             setTimer(time => {
               if (time <= 1000) {
@@ -228,8 +225,8 @@ function Timer({user}) {
           ?
         <div className="timer">
           <span className="timer__time">
-            <h1 style={{color: (timerState === 5 && opponentTime > 0) ? (opponentTime > timer ? 'limegreen' : 'red') : 'inherit'}}>
-              {timerState !== null && ((timerState === 4 || timerState === 5) ? formatTimer(timer) : timerState === 1 ? 'Scramble' : timer/1000)}
+            <h1 style={{color: (timerState === 5 && opponentTime > 0) ? (opponentTime > timer ? 'limegreen' : 'red') : 'inherit'}} className={timerState === 1 ? 'scramble' : ''}>
+              {timerState !== null && ((timerState === 4 || timerState === 5) ? formatTimer(timer) : timerState === 1 ? scramble : timer/1000)}
             </h1>
           </span>
 

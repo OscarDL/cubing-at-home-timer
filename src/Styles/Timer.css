@@ -8,9 +8,14 @@
   flex-grow: 1;
 }
 .timer > * { padding: 10px 0; }
-.timer > .timer__time {
-  line-height: 222px;
-  font-size: 96px;
+.timer > .timer__time > h1:not(.scramble) {
+  line-height: 200px;
+  font-size: 160px;
+}
+.timer > .timer__time > h1.scramble {
+  line-height: 72px;
+  font-size: 36px;
+  padding: 0 5%;
 }
 
 .runnerState {
@@ -19,15 +24,15 @@
 }
 
 @media(max-height: 640px) {
-  .timer > .timer__time {
-    line-height: 90px;
-    font-size: 60px;
+  .timer > .timer__time > h1 {
+    line-height: 120px !important;
+    font-size: 120px !important;
   }
   .timer > .runnerState {
-    font-size: 24px;
+    font-size: 24px !important;
   }
   .timer > span > h2 {
-    font-size: 20px;
+    font-size: 20px !important;
   }
 }
 
