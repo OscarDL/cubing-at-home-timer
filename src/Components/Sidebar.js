@@ -9,7 +9,7 @@ function Sidebar() {
   const [channels, setChannels] = useState([]);
 
   useEffect(() => {
-    db.collection('timer-rooms').onSnapshot(snapshot => (
+    db.collection('timer-rooms').where('completed', '!=', true).onSnapshot(snapshot => (
       setChannels(
         snapshot.docs.map(doc => ({
           id: doc.id,
@@ -36,11 +36,11 @@ function Sidebar() {
         </Link>
         <hr/>
         <div className="rooms">
-          {channels.map((channel, key) => (
-            <Link key={key} title={channel.name} className="room" to={`/room/${channel.id}`}>
+          {channels.map((channel, i) => 
+            <Link key={i} title={channel.name} className="room" to={`/room/${channel.id}`}>
               {channel.name}
             </Link>
-          ))}
+          )}
         </div>
       </div>
     </>

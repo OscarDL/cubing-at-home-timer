@@ -7,14 +7,14 @@ function formatTimer(timer) {
   return ((timer.toString()).substring(0, timer.toString().length - 3) || '0') + '.' + (timer < 100 && timer > 1 ? '0' : '') + ((timer.toString()).substring(timer.toString().length - 3, timer.toString().length - 1) || '00');
 }
 
-function Spectator({ room }) {
+export default function Spectator({ room }) {
+  const [roomInfo, setRoomInfo] = useState({});
 
   const [runner1, setRunner1] = useState({});
   const [runner2, setRunner2] = useState({});
 
   const [timer1, setTimer1] = useState(0);
   const [timer2, setTimer2] = useState(0);
-  const [roomInfo, setRoomInfo] = useState({})
 
   useEffect(() => {
     let info = db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').onSnapshot(s => setRunner1(s.data()));
@@ -26,11 +26,10 @@ function Spectator({ room }) {
     return () => info();
   }, [room, setRunner2]);
 
-
   useEffect(() => {
     let info = db.collection('timer-rooms').doc(room).onSnapshot(s => setRoomInfo(s.data()));
     return () => info();
-  },[room])
+  }, [room]);
 
 
   useEffect(() => {
@@ -61,18 +60,18 @@ function Spectator({ room }) {
             {runner1?.['current-time'] !== undefined &&
               ((runner1?.['current-time'] === 0 || runner1?.['state'] === 'waiting')
                 ?
-                (runner1?.['timer-started'] === true ? formatTimer(timer1) : runner1?.['state'])
+              (runner1?.['timer-started'] === true ? formatTimer(timer1) : runner1?.['state'])
                 :
-                <span style={{ color: runner2?.['current-time'] > 0 ? (runner2?.['current-time'] > runner1?.['current-time'] ? 'limegreen' : 'red') : 'inherit' }}>
-                  {formatTimer(runner1?.['current-time'])}
-                </span>)}
+              <span style={{ color: runner2?.['current-time'] > 0 ? (runner2?.['current-time'] > runner1?.['current-time'] ? 'limegreen' : 'red') : 'inherit' }}>
+                {formatTimer(runner1?.['current-time'])}
+              </span>)
+            }
           </h1>
-          <Grid container direction='row' spacing={1}>
-            {[...Array(roomInfo.neededToWin)].map((_, i) =>
-              <Grid item key={i}>
-                <img style={{height: '50px', width: '50px'}} src={i + 1 > runner1.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} />
-              </Grid>)}
-          </Grid>
+          <div className="spectator__wins">
+            {runner1?.wins !== undefined && [...Array(roomInfo.neededToWin)].map((_, i) =>
+              <img key={i} src={i + 1 > runner1.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} />
+            )}
+          </div>
         </span>
 
         <span>
@@ -83,23 +82,21 @@ function Spectator({ room }) {
             {runner2?.['current-time'] !== undefined &&
               ((runner2?.['current-time'] === 0 || runner2?.['state'] === 'waiting')
                 ?
-                (runner2?.['timer-started'] === true ? formatTimer(timer2) : runner2?.['state'])
+              (runner2?.['timer-started'] === true ? formatTimer(timer2) : runner2?.['state'])
                 :
-                <span style={{ color: runner1?.['current-time'] > 0 ? (runner2?.['current-time'] < runner1?.['current-time'] ? 'limegreen' : 'red') : 'inherit' }}>
-                  {formatTimer(runner2?.['current-time'])}
-                </span>)}
+              <span style={{ color: runner1?.['current-time'] > 0 ? (runner2?.['current-time'] < runner1?.['current-time'] ? 'limegreen' : 'red') : 'inherit' }}>
+                {formatTimer(runner2?.['current-time'])}
+              </span>)
+              }
           </h1>
-          <Grid container direction='row' spacing={1}>
-            {new Array(roomInfo.neededToWin).fill(0).map((_, i) =>
-              <Grid item key={i}>
-                <img style={{height: '50px', width: '50px'}} src={i + 1 > runner2.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} />
-              </Grid>)}
-          </Grid>
+          <div className="spectator__wins">
+            {runner2?.wins !== undefined && [...Array(roomInfo.neededToWin)].map((_, i) =>
+              <img key={i} src={i + 1 > runner2.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} />
+            )}
+          </div>
         </span>
 
       </span>
     </div>
   );
 }
-
-export default Spectator;
