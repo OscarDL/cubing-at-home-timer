@@ -55,6 +55,16 @@
 .spectator__runners > span > h1 { font-size: 60px; }
 .spectator__runners > span > h2 { font-size: 36px; }
 
+.spectator__wins {
+  justify-content: center;
+  column-gap: 20px;
+  display: flex;
+}
+.spectator__wins > img {
+  height: 50px;
+  width: 50px;
+}
+
 @media(max-width: 991px) {
   .spectator__runners {
     flex-direction: column;
