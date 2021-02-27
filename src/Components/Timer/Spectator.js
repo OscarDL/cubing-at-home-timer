@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import Grid from '@material-ui/core/Grid'
 
 import { db } from '../../firebase';
 
@@ -69,7 +68,7 @@ export default function Spectator({ room }) {
           </h1>
           <div className="spectator__wins">
             {runner1?.wins !== undefined && [...Array(roomInfo.neededToWin)].map((_, i) =>
-              <img key={i} src={i + 1 > runner1.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} />
+              <img key={i} src={i + 1 > runner1?.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} alt="win-loss-cube" />
             )}
           </div>
         </span>
@@ -91,7 +90,7 @@ export default function Spectator({ room }) {
           </h1>
           <div className="spectator__wins">
             {runner2?.wins !== undefined && [...Array(roomInfo.neededToWin)].map((_, i) =>
-              <img key={i} src={i + 1 > runner2.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} />
+              <img key={i} src={i + 1 > runner2?.wins ? '/images/blank-cube.png' : '/images/winning-cube.png'} alt="win-loss-cube" />
             )}
           </div>
         </span>
