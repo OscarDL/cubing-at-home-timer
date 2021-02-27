@@ -11,7 +11,7 @@ function formatTimer(timer) {
   return ((timer.toString()).substring(0, timer.toString().length - 3) || '0') + '.' + (timer < 100 && timer > 1 ? '0' : '') + ((timer.toString()).substring(timer.toString().length - 3, timer.toString().length - 1) || '00');
 }
 
-function Timer({user}) {
+export default function Timer({user}) {
   const { roomId } = useParams();
   const [timer, setTimer] = useState(0);
   const [runner, setRunner] = useState(0);
@@ -53,8 +53,6 @@ function Timer({user}) {
     if (roomExists) {
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
-      window.location.href.includes('id=1') && setRunner(1);
-      window.location.href.includes('id=2') && setRunner(2);
     }
   }, [user, roomId, roomExists, setRunner]);
 
@@ -279,5 +277,3 @@ function Timer({user}) {
     </>
   );
 }
-
-export default Timer;
