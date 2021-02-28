@@ -32,8 +32,8 @@ export const initializeAuth = () => {
 	/* Clear the hash if there is a token. 
 	if (hashParams.has('access_token')) {
 		history.replace({ ...history.location, hash: null })
-	}
-*/
+	}*/
+  
 	/* Check if we know what path to redirect to (after OAuth redirect). */
 	const redirectPath = localStorage.getItem(localStorageKey('redirectPath'))
 	if (redirectPath) {

@@ -6,7 +6,7 @@ function formatTimer(timer) {
   return ((timer.toString()).substring(0, timer.toString().length - 3) || '0') + '.' + (timer < 100 && timer > 1 ? '0' : '') + ((timer.toString()).substring(timer.toString().length - 3, timer.toString().length - 1) || '00');
 }
 
-export default function Spectator({ room }) {
+export default function Spectator({ room, complete }) {
   const [roomInfo, setRoomInfo] = useState({});
 
   const [runner1, setRunner1] = useState({});
@@ -50,6 +50,13 @@ export default function Spectator({ room }) {
 
   return (
     <div className="timer">
+      {complete
+        ?
+      <h1 style={{display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+      <img src="https://www.cubingathome.com/logo.png" style={{width: '10%'}} alt="logo" />
+        <br/>Head-to-heads for this room are finished.<br/><br/>Thank you for coming in.
+      </h1>
+        :
       <span className="spectator__runners">
         <span>
           <h2>
@@ -95,7 +102,7 @@ export default function Spectator({ room }) {
           </div>
         </span>
 
-      </span>
+      </span>}
     </div>
   );
 }

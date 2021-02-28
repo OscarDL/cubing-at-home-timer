@@ -9,17 +9,20 @@
 }
 .timer > * {
   padding: 10px 0;
-  user-select: none;
 }
 
-.timer > .timer__time > h1:not(.scramble) {
+.timer__time > h1:not(.scramble) {
   line-height: 200px;
   font-size: 160px;
 }
-.timer > .timer__time > h1.scramble {
+.timer__time > h1.scramble {
   line-height: 72px;
   font-size: 36px;
   padding: 0 5%;
+}
+
+.MuiInputBase-root fieldset {
+  border: none !important;
 }
 
 .runnerState {
@@ -28,15 +31,25 @@
 }
 
 @media(max-height: 640px) {
-  .timer > .timer__time > h1:not(.scramble) {
+  .timer__time > h1:not(.scramble) {
     line-height: 120px !important;
     font-size: 120px !important;
   }
-  .timer > .runnerState {
+  .runnerState {
     font-size: 24px !important;
   }
   .timer > span > h2 {
     font-size: 20px !important;
+  }
+}
+
+@media(prefers-color-scheme: dark) {
+  .timer__finalTime > .MuiFormControl-root > p {
+    color: white;
+  }
+  .timer__finalTime > .MuiFormControl-root > div {
+    color: white;
+    border: 1px solid grey;
   }
 }
 
