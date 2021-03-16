@@ -55,8 +55,8 @@ export default function Timer({user}) {
     if (roomExists) {
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
-      window.location.href.includes('id=1') && setRunner(1);
-      window.location.href.includes('id=2') && setRunner(2);
+      //window.location.href.includes('id=1') && setRunner(1);
+      //window.location.href.includes('id=2') && setRunner(2);
     }
   }, [user, roomId, roomExists, setRunner]);
 
@@ -70,14 +70,14 @@ export default function Timer({user}) {
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).onSnapshot(s => {
         setReady(s.data()?.ready);
         setTimerState(s.data()?.['timer-state']);
-        s.data()?.['current-time'] > 0 && setCurrentTime(s.data()?.['current-time']);
+        setCurrentTime(s.data()?.['current-time']);
       });
       
       // Set opponent name & ready state
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(runner === 1 ? '2' : '1')).onSnapshot(s => {
         setOpponentName(s.data()?.name);
         setOpponentReady(s.data()?.ready);
-        s.data()?.['current-time'] > 0 && setOpponentTime(s.data()?.['current-time']);
+        setOpponentTime(s.data()?.['current-time']);
       });
     }
   }, [user, roomId, runner, roomExists, setCurrentTime, setOpponentName, setOpponentTime, setOpponentReady]);
@@ -94,7 +94,6 @@ export default function Timer({user}) {
       if (timerState === -1) {
 
         setTimer(0);
-        setCurrentTime(0);
         setRunnerState('Waiting for your judge to ready up.');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
@@ -108,7 +107,6 @@ export default function Timer({user}) {
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
           'ready': false,
           'time-started': 0,
-          'current-time': 0,
           'state': 'waiting',
           'timer-started': false
         });
@@ -119,12 +117,12 @@ export default function Timer({user}) {
 
         opponentReady && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
           'timer-state': 1,
+          'current-time': 0,
           'state': 'scrambling'
         });
 
       } else if (timerState === 1) {
 
-        setOpponentTime(0);
         setRunnerState('Scrambling...');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION

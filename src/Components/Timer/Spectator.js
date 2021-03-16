@@ -12,8 +12,6 @@ export default function Spectator({ room, complete }) {
   const [runner1, setRunner1] = useState({});
   const [runner2, setRunner2] = useState({});
 
-  const [timer1, setTimer1] = useState(0);
-  const [timer2, setTimer2] = useState(0);
 
   useEffect(() => {
     let info = db.collection('timer-rooms').doc(room).collection('runners').doc('runner1').onSnapshot(s => setRunner1(s.data()));
@@ -29,23 +27,6 @@ export default function Spectator({ room, complete }) {
     let info = db.collection('timer-rooms').doc(room).onSnapshot(s => setRoomInfo(s.data()));
     return () => info();
   }, [room]);
-
-
-  useEffect(() => {
-    if (runner1?.['state'] === 'solving') {
-      setTimer1(Date.now() - runner1?.['time-started']);
-      const interval = setInterval(() => setTimer1(time => time + 10), 10);
-      return () => clearInterval(interval);
-    }
-  }, [runner1, setTimer1]);
-
-  useEffect(() => {
-    if (runner2?.['state'] === 'solving') {
-      setTimer2(Date.now() - runner2?.['time-started']);
-      const interval = setInterval(() => setTimer2(time => time + 10), 10);
-      return () => clearInterval(interval);
-    }
-  }, [runner2, setTimer2]);
 
 
   return (
@@ -66,7 +47,7 @@ export default function Spectator({ room, complete }) {
             {runner1?.['current-time'] !== undefined &&
               ((runner1?.['current-time'] === 0 || runner1?.['state'] === 'waiting')
                 ?
-              (runner1?.['timer-started'] === true ? formatTimer(timer1) : runner1?.['state'])
+              runner1?.['state']
                 :
               <span style={{ color: runner2?.['current-time'] > 0 ? (runner2?.['current-time'] > runner1?.['current-time'] ? 'limegreen' : 'red') : 'inherit' }}>
                 {formatTimer(runner1?.['current-time'])}
@@ -88,7 +69,7 @@ export default function Spectator({ room, complete }) {
             {runner2?.['current-time'] !== undefined &&
               ((runner2?.['current-time'] === 0 || runner2?.['state'] === 'waiting')
                 ?
-              (runner2?.['timer-started'] === true ? formatTimer(timer2) : runner2?.['state'])
+              runner2?.['state']
                 :
               <span style={{ color: runner1?.['current-time'] > 0 ? (runner2?.['current-time'] < runner1?.['current-time'] ? 'limegreen' : 'red') : 'inherit' }}>
                 {formatTimer(runner2?.['current-time'])}
