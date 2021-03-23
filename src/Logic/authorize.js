@@ -59,7 +59,8 @@ export const login = () => {
 		scope: 'public',
 	})
     
-  const url = `https://www.worldcubeassociation.org/oauth/authorize?${params}`;
+ const url = process.env.NODE_ENV === 'production' ?  `https://www.worldcubeassociation.org/oauth/authorize?${params}` : `https://staging.worldcubeassociation.org/oauth/authorize?${params}`
+  
 
 	localStorage.setItem(localStorageKey('redirectPath'), window.location);
 

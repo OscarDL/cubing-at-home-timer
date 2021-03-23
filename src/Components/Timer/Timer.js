@@ -165,7 +165,7 @@ export default function Timer({user}) {
           setTimer(time => {
             if (time <= 10) {
               db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-                'timer-state': 4,
+                'timer-state': 5,
                 'state': 'solving',
                 'timer-started': true,
                 'time-started': Date.now()
@@ -184,7 +184,7 @@ export default function Timer({user}) {
 
       } else if (timerState === 5) {
 
-        setRunnerState('Waiting for the judge to approve your time.');
+        setRunnerState('Please show your timer/display to the Judge once solved.');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
         /*document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
@@ -197,16 +197,16 @@ export default function Timer({user}) {
     }
   }, [roomId, runner, setTimer, timerState, setCurrentTime, opponentName, opponentReady, setOpponentTime, setRunnerState]);
 
-  useEffect(() => {
-    if (timerState === 5 && runner !== 0 && finalTime > 0 && opponentTime > 0) {
-      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-        'attempts': firebase.firestore.FieldValue.arrayUnion({
-          'time': finalTime,
-          'win': (finalTime < opponentTime) ? true : false
-        })
-      });
-    }
-  }, [timer, roomId, runner, finalTime, timerState, opponentTime]);
+  // useEffect(() => {
+  //   if (timerState === 5 && runner !== 0 && finalTime > 0 && opponentTime > 0) {
+  //     db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+  //       'attempts': firebase.firestore.FieldValue.arrayUnion({
+  //         'time': finalTime,
+  //         'win': (finalTime < opponentTime) ? true : false
+  //       })
+  //     });
+  //   }
+  // }, [timer, roomId, runner, finalTime, timerState, opponentTime]);
 
 
   const sendResult = () => {
@@ -236,7 +236,7 @@ export default function Timer({user}) {
             {(timerState !== 1 && timerState !== 4 && timerState !== 5) && Math.ceil(timer/1000)}
             {timerState === 1 && scramble}
             {timerState === 4 && <span className="timer__finalTime">
-              <AttemptField helperText='Final Time' initialValue='' onValue={val => setFinalTime(val*10)}/><button onClick={sendResult}>Send result</button>
+              {/* <AttemptField helperText='Final Time' initialValue='' onValue={val => setFinalTime(val*10)}/><button onClick={sendResult}>Send result</button> */}
             </span>}
             {timerState === 5 && formatTimer(currentTime)}
           </h1>
