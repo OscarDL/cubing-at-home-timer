@@ -1,11 +1,13 @@
 .sidebar {
   background-color: #324191;
+  max-width: 300px;
+  min-width: 300px;
   color: white;
   padding: 10px;
-  width: 300px;
 }
 .sidebarBtn {
   position: absolute;
+  user-select: none;
   display: none;
   padding: 15px;
   left: 0;
@@ -63,7 +65,7 @@
   cursor: pointer;
 }
 
-@media(max-width: 991px) {
+@media(max-width: 1240px) {
   .sidebar {
     display: none;
     z-index: 1;
@@ -74,7 +76,7 @@
   }
 }
 
-@media(min-width: 992px) {
+@media(min-width: 1241px) {
   .sidebar {
     display: block !important;
   }

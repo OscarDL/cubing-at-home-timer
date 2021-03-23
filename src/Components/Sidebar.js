@@ -19,7 +19,7 @@ function Sidebar() {
     ));
 
     document.addEventListener('click', function(e) {
-      if (window.innerWidth < 992) {
+      if (window.innerWidth < 1240) {
         ((e.target.className).includes('room')) && (document.querySelector('.sidebar').style.display = 'none');
         ((e.target.className).includes('sidebarBtn')) && (document.querySelector('.sidebar').style.display = 'block');
       }

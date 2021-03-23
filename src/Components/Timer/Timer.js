@@ -1,9 +1,10 @@
-import firebase from 'firebase';
+//import firebase from 'firebase';
 import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 
 import { db } from '../../firebase';
 import Spectator from './Spectator';
+//import AttemptField from '../AttemptField/AttemptField';
 
 import '../../Styles/Timer.css';
 
@@ -16,9 +17,7 @@ export default function Timer({user}) {
   const [timer, setTimer] = useState(0);
   const [runner, setRunner] = useState(0);
   const [ready, setReady] = useState(false);
-  const [started, setStarted] = useState(0);
-  const [finished, setFinished] = useState(0);
-  const [inSolve, setInSolve] = useState(false);
+  //const [finalTime, setFinalTime] = useState(0);
   const [scramble, setScramble] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [timerState, setTimerState] = useState(null);
@@ -29,6 +28,7 @@ export default function Timer({user}) {
 
   const [roomName, setRoomName] = useState(null);
   const [roomExists, setRoomExists] = useState(false);
+  const [roomCompleted, setRoomCompleted] = useState(false);
 
 
   /* ROOM INFO */
@@ -41,7 +41,9 @@ export default function Timer({user}) {
         setRoomExists(true);
         setRoomName(s.data().name);
         setScramble(s.data().currScramble);
-        document.querySelector(`.rooms > a[href='/room/${roomId}']`).style.backgroundColor = 'rgba(255, 255, 255, 0.075)';
+        setRoomCompleted(s.data().completed);
+
+        document.querySelectorAll(`.rooms > a[href='/room/${roomId}']`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0.075)');
         document.querySelectorAll(`.rooms > a:not([href='/room/${roomId}'])`).forEach(el => el.style.backgroundColor = 'rgba(255, 255, 255, 0)');
 
       } else setRoomName('');
@@ -53,6 +55,8 @@ export default function Timer({user}) {
     if (roomExists) {
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner1').get('id').then(s => s.data().id === user?.me?.id && setRunner(1));
       user && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner2').get('id').then(s => s.data().id === user?.me?.id && setRunner(2));
+      //window.location.href.includes('id=1') && setRunner(1);
+      //window.location.href.includes('id=2') && setRunner(2);
     }
   }, [user, roomId, roomExists, setRunner]);
 
@@ -66,15 +70,14 @@ export default function Timer({user}) {
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).onSnapshot(s => {
         setReady(s.data()?.ready);
         setTimerState(s.data()?.['timer-state']);
-        s.data()?.['time-started'] > 0 && setStarted(s.data()?.['time-started']);
-        s.data()?.['current-time'] > 0 && setCurrentTime(s.data()?.['current-time']);
+        setCurrentTime(s.data()?.['current-time']);
       });
       
       // Set opponent name & ready state
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+(runner === 1 ? '2' : '1')).onSnapshot(s => {
         setOpponentName(s.data()?.name);
-        s.data()?.state !== 'solving' && setOpponentReady(s.data()?.ready);
-        s.data()?.['current-time'] > 0 && setOpponentTime(s.data()?.['current-time']);
+        setOpponentReady(s.data()?.ready);
+        setOpponentTime(s.data()?.['current-time']);
       });
     }
   }, [user, roomId, runner, roomExists, setCurrentTime, setOpponentName, setOpponentTime, setOpponentReady]);
@@ -86,10 +89,11 @@ export default function Timer({user}) {
     if (runner !== 0 && timerState !== null) {
       // -1: idle, 0: ready - waiting for scrambles, 1: scrambling, 2: ready - waiting for opponent, 3: inspection, 4: solving, 5: done
       document.body.onkeyup = () => null;
+      document.body.ontouchend = () => null;
+
       if (timerState === -1) {
 
         setTimer(0);
-        setCurrentTime(0);
         setRunnerState('Waiting for your judge to ready up.');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
@@ -103,7 +107,6 @@ export default function Timer({user}) {
         db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
           'ready': false,
           'time-started': 0,
-          'current-time': 0,
           'state': 'waiting',
           'timer-started': false
         });
@@ -113,8 +116,8 @@ export default function Timer({user}) {
         setRunnerState(`Waiting for ${opponentName || 'opponent'}...`);
 
         opponentReady && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-          'ready': false,
           'timer-state': 1,
+          'current-time': 0,
           'state': 'scrambling'
         });
 
@@ -132,75 +135,56 @@ export default function Timer({user}) {
 
       } else if (timerState === 2) {
 
-        if(opponentReady) {
+        setTimer(3000);
+        setRunnerState('Inspection starts in...');
 
-          setTimer(3000);
-          setRunnerState('Starting in...');
+        const interval = setInterval(() =>
+          setTimer(time => {
+            if (time <= 1000) {
+              db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+                'timer-state': 3,
+                'current-time': 0,
+                'state': 'inspecting'
+              });
+              clearInterval(interval);
+            }
+            return (time - 1000);
+          }),
+        1000);
 
-          const interval = setInterval(() =>
-            setTimer(time => {
-              if (time <= 1000) {
-                db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-                  'timer-state': 3,
-                  'current-time': 0,
-                  'state': 'inspecting'
-                });
-                clearInterval(interval);
-              }
-              return (time - 1000);
-            }),
-          1000);
-
-          return () => clearInterval(interval);
-
-        } else setRunnerState(`Waiting for ${opponentName || 'opponent'} to ready up...`);
+        return () => clearInterval(interval);
 
       } else if (timerState === 3) {
 
+        setTimer(15000);
         setRunnerState('Press space to start solving.');
 
         document.body.onkeyup = (e) => e.keyCode === 32 && setTimer(10);
 
-        if (opponentReady) {
-          setTimer(15000); // do not restart inspection time if opponent finishes first (resetting ready state with useEffect dependency)
+        const interval = setInterval(() =>
+          setTimer(time => {
+            if (time <= 10) {
+              db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+                'timer-state': 5,
+                'state': 'solving',
+                'timer-started': true,
+                'time-started': Date.now()
+              });
+              clearInterval(interval);
+            }
+            return (time - 10);
+          }),
+        10);
 
-          const interval = setInterval(() =>
-            setTimer(time => {
-              if (time <= 10) {
-                db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-                  'ready': false,
-                  'timer-state': 4,
-                  'state': 'solving',
-                  'timer-started': true,
-                  'time-started': Date.now()
-                });
-                clearInterval(interval);
-              }
-              return (time - 10);
-            }),
-          10);
-
-          return () => clearInterval(interval);
-        }
+        return () => clearInterval(interval);
 
       } else if (timerState === 4) {
 
-        setInSolve(true);
-        setRunnerState('Press any key to stop the timer.');
-
-        document.body.onkeyup = () => {
-          setFinished(Date.now());
-          db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'timer-state': 5});
-        }
-
-        if (!inSolve) setTimer(0); // Do not restart solve time if opponent finishes first (resetting ready state with useEffect dependency)
-        const interval = setInterval(() => setTimer(time => time + 10), 10);
-        return () => clearInterval(interval);
+        setRunnerState(null);
 
       } else if (timerState === 5) {
 
-        setInSolve(false);
-        setRunnerState('Waiting for judge to clear your timer.');
+        setRunnerState('Please show your timer/display to the Judge once solved.');
 
         // FOR DEBUGGING ONLY, JUDGE SHOULD RESET - COMMENT FOR PRODUCTION
         /*document.body.onkeyup = (e) => e.keyCode === 32 && // 32 = space
@@ -211,69 +195,70 @@ export default function Timer({user}) {
           });*/
       }
     }
-  }, [roomId, runner, inSolve, setTimer, timerState, setFinished, setCurrentTime, opponentName, opponentReady, setRunnerState]);
+  }, [roomId, runner, setTimer, timerState, setCurrentTime, opponentName, opponentReady, setOpponentTime, setRunnerState]);
 
-  useEffect(() => {
-    if (timerState === 5 && runner !== 0) {
-      (finished - started) > 0 && db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({'current-time': finished - started});
-
-      ((finished - started) > 0 && opponentTime > 0)
-        &&
+  /*useEffect(() => {
+    if (timerState === 5 && runner !== 0 && finalTime > 0 && opponentTime > 0) {
       db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
         'attempts': firebase.firestore.FieldValue.arrayUnion({
-          'time': finished - started,
-          'win': ((finished - started) < opponentTime) ? true : false
+          'time': finalTime,
+          'win': (finalTime < opponentTime) ? true : false
         })
       });
     }
-  }, [timer, roomId, runner, started, finished, timerState, opponentTime]);
+  }, [timer, roomId, runner, finalTime, timerState, opponentTime]);
+
+
+  const sendResult = () => {
+    finalTime > 0
+      ?
+    db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+      'timer-state': 5,
+      'state': 'solved',
+      'current-time': finalTime
+    })
+      :
+    window.alert('Please enter a real time.');
+  }*/
 
 
   return (
+    roomName !== null &&
+    (roomExists
+      ?
     <>
-      {roomName !== null &&
-      (roomExists
+      <h1>{roomName?.toUpperCase() || ''}</h1>
+      {runner !== 0
         ?
-      <>
-        <h1>{roomName?.toUpperCase() || ''}</h1>
-        {runner !== 0
-          ?
-        <div className="timer">
-          <span className="timer__time">
-            <h1 style={{color: (timerState === 5 && opponentTime > 0) ? (opponentTime > currentTime ? 'limegreen' : 'red') : 'inherit'}} className={timerState === 1 ? 'scramble' : ''}>
-              {timerState !== null && ((timerState === 4 || timerState === 5) ? formatTimer(currentTime || timer) : timerState === 1 ? scramble : Math.ceil(timer/1000))}
-            </h1>
-          </span>
-
-          <h2 className="runnerState">
-            {(timerState === 5 && opponentTime > 0) && <>{opponentName || 'Opponent'}'s time: 
-              <span style={{color: opponentTime > currentTime ? 'red' : 'limegreen'}}> {formatTimer(opponentTime)}</span><br/><br/></>}
-            {runnerState}
-          </h2>
-          
-          {((timerState < 1 || timerState > 5) && timerState !== null)
-            &&
-          <span>
-            <h2 style={{color: ready ? 'limegreen' : 'red'}}>
-              YOU - {ready ? 'READY' : 'NOT READY'}
-            </h2>
-            <br/>
-            {opponentName !== ''
-              ? 
-            <h2 style={{color: opponentReady ? 'limegreen' : 'red'}}>
-              {`${opponentName} - ${opponentReady ? 'READY' : 'NOT READY'}`}
-            </h2>
-              :
-            <h2 style={{color: 'orange'}}>Opponent has not joined yet</h2>}
-          </span>}
-        </div>
-          :
-        <Spectator room={roomId}/>}
-      </>
-        :
       <div className="timer">
-        <h1>This room does not exist.</h1>
-      </div>)}
+        <span className="timer__time">
+          <h1 style={{color: (timerState === 5 && opponentTime > 0) ? (opponentTime > currentTime ? 'limegreen' : 'red') : 'inherit'}} className={(timerState === 1 || timerState === 4) ? 'scramble' : ''}>
+            {(timerState !== 1 && timerState !== 4 && timerState !== 5) && Math.ceil(timer/1000)}
+            {timerState === 1 && scramble}
+            {/*timerState === 4 && <span className="timer__finalTime">
+              {<AttemptField helperText='Final Time' initialValue='' onValue={val => setFinalTime(val*10)}/><button onClick={sendResult}>Send result</button>}
+            </span>*/}
+            {timerState === 5 && formatTimer(currentTime)}
+          </h1>
+        </span>
+
+        <h2 className="runnerState">
+          {(timerState === 5 && opponentTime > 0) && <>{opponentName || 'Opponent'}'s time: 
+            <span style={{color: opponentTime > currentTime ? 'red' : 'limegreen'}}> {formatTimer(opponentTime)}</span><br/><br/></>}
+          {runnerState && runnerState}
+        </h2>
+        
+        {timerState < 1 && <span>
+          <h2 style={{color: ready ? 'limegreen' : 'red'}}>YOU - {ready ? 'READY' : 'NOT READY'}</h2><br/>
+          <h2 style={{color: opponentReady ? 'limegreen' : 'red'}}>{`${opponentName || 'Opponent'} - ${opponentReady ? 'READY' : 'NOT READY'}`}</h2>
+        </span>}
+      </div>
+        :
+      <Spectator room={roomId} complete={roomCompleted}/>}
     </>
+      :
+    <div className="timer">
+      <h1>This room does not exist.</h1>
+    </div>)
   );
 }
