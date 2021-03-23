@@ -2,10 +2,7 @@ import { isSignedIn, wcaAccessToken } from './authorize';
 
 export function getMe() {
 
-  return !isSignedIn()
-    ?
-    null
-    :
+  return !isSignedIn() ? null :
     fetch(
       `https://${process.env.NODE_ENV === 'production' ? 'www' : 'staging'}.worldcubeassociation.org/api/v0/me/`,
       {
@@ -15,8 +12,8 @@ export function getMe() {
         })
       }
     ).then(response => {
-      if (!response.ok) throw new Error(response.statusText)
-      return response
+      if (!response.ok) throw new Error(response.statusText);
+      return response;
     }).then(response => response.json());
 
 }

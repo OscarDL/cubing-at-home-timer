@@ -1,10 +1,10 @@
-import firebase from 'firebase';
+//import firebase from 'firebase';
 import { useParams } from 'react-router-dom';
 import React, { useEffect, useState } from 'react';
 
 import { db } from '../../firebase';
 import Spectator from './Spectator';
-import AttemptField from '../AttemptField/AttemptField';
+//import AttemptField from '../AttemptField/AttemptField';
 
 import '../../Styles/Timer.css';
 
@@ -17,7 +17,7 @@ export default function Timer({user}) {
   const [timer, setTimer] = useState(0);
   const [runner, setRunner] = useState(0);
   const [ready, setReady] = useState(false);
-  const [finalTime, setFinalTime] = useState(0);
+  //const [finalTime, setFinalTime] = useState(0);
   const [scramble, setScramble] = useState(null);
   const [currentTime, setCurrentTime] = useState(0);
   const [timerState, setTimerState] = useState(null);
@@ -197,16 +197,16 @@ export default function Timer({user}) {
     }
   }, [roomId, runner, setTimer, timerState, setCurrentTime, opponentName, opponentReady, setOpponentTime, setRunnerState]);
 
-  // useEffect(() => {
-  //   if (timerState === 5 && runner !== 0 && finalTime > 0 && opponentTime > 0) {
-  //     db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-  //       'attempts': firebase.firestore.FieldValue.arrayUnion({
-  //         'time': finalTime,
-  //         'win': (finalTime < opponentTime) ? true : false
-  //       })
-  //     });
-  //   }
-  // }, [timer, roomId, runner, finalTime, timerState, opponentTime]);
+  /*useEffect(() => {
+    if (timerState === 5 && runner !== 0 && finalTime > 0 && opponentTime > 0) {
+      db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
+        'attempts': firebase.firestore.FieldValue.arrayUnion({
+          'time': finalTime,
+          'win': (finalTime < opponentTime) ? true : false
+        })
+      });
+    }
+  }, [timer, roomId, runner, finalTime, timerState, opponentTime]);
 
 
   const sendResult = () => {
@@ -219,7 +219,7 @@ export default function Timer({user}) {
     })
       :
     window.alert('Please enter a real time.');
-  }
+  }*/
 
 
   return (
@@ -235,9 +235,9 @@ export default function Timer({user}) {
           <h1 style={{color: (timerState === 5 && opponentTime > 0) ? (opponentTime > currentTime ? 'limegreen' : 'red') : 'inherit'}} className={(timerState === 1 || timerState === 4) ? 'scramble' : ''}>
             {(timerState !== 1 && timerState !== 4 && timerState !== 5) && Math.ceil(timer/1000)}
             {timerState === 1 && scramble}
-            {timerState === 4 && <span className="timer__finalTime">
-              {/* <AttemptField helperText='Final Time' initialValue='' onValue={val => setFinalTime(val*10)}/><button onClick={sendResult}>Send result</button> */}
-            </span>}
+            {/*timerState === 4 && <span className="timer__finalTime">
+              {<AttemptField helperText='Final Time' initialValue='' onValue={val => setFinalTime(val*10)}/><button onClick={sendResult}>Send result</button>}
+            </span>*/}
             {timerState === 5 && formatTimer(currentTime)}
           </h1>
         </span>
