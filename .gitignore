@@ -10,8 +10,6 @@
 
 # production
 /build
-/src/Logic/secrets.js
-/src/firebase.js
 
 # misc
 .DS_Store
