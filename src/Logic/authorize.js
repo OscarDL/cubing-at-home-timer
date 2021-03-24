@@ -1,7 +1,5 @@
 //modified from https://github.com/saranshgrover/cubing-at-home/blob/master/src/logic/auth.js
-import { WCA_UID } from './secrets';
-
-export const localStorageKey = (key) => `WCA-Real-Time.${WCA_UID}.${key}`;
+export const localStorageKey = (key) => `WCA-Real-Time.${process.env.WCA_UID}.${key}`;
 
 export const initializeAuth = () => {
 	const hash = window.location.hash.replace(/^#/, '');
@@ -43,7 +41,7 @@ export const wcaAccessToken = () =>
 
 export const login = () => {
   const params = new URLSearchParams({
-		client_id: WCA_UID,
+		client_id: process.env.WCA_UID,
 		response_type: 'token',
 		redirect_uri: window.location.origin,
 		scope: 'public',

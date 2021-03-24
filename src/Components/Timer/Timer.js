@@ -165,7 +165,7 @@ export default function Timer({user}) {
           setTimer(time => {
             if (time <= 10) {
               db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
-                'timer-state': 5,
+                'timer-state': 5, //4,
                 'state': 'solving',
                 'timer-started': true,
                 'time-started': Date.now()
@@ -209,7 +209,7 @@ export default function Timer({user}) {
   }, [timer, roomId, runner, finalTime, timerState, opponentTime]);
 
 
-  const sendResult = () => {
+  /*const sendResult = () => {
     finalTime > 0
       ?
     db.collection('timer-rooms').doc(roomId).collection('runners').doc('runner'+runner).update({
@@ -236,7 +236,11 @@ export default function Timer({user}) {
             {(timerState !== 1 && timerState !== 4 && timerState !== 5) && Math.ceil(timer/1000)}
             {timerState === 1 && scramble}
             {/*timerState === 4 && <span className="timer__finalTime">
+<<<<<<< HEAD
               {<AttemptField helperText='Final Time' initialValue='' onValue={val => setFinalTime(val*10)}/><button onClick={sendResult}>Send result</button>}
+=======
+              <AttemptField helperText='Final Time' initialValue='' onValue={val => setFinalTime(val*10)}/><button onClick={sendResult}>Send result</button>
+>>>>>>> 38480efc9eb02d2a7697510cf51b113b96733703
             </span>*/}
             {timerState === 5 && formatTimer(currentTime)}
           </h1>
@@ -245,7 +249,7 @@ export default function Timer({user}) {
         <h2 className="runnerState">
           {(timerState === 5 && opponentTime > 0) && <>{opponentName || 'Opponent'}'s time: 
             <span style={{color: opponentTime > currentTime ? 'red' : 'limegreen'}}> {formatTimer(opponentTime)}</span><br/><br/></>}
-          {runnerState && runnerState}
+          {runnerState || ''}
         </h2>
         
         {timerState < 1 && <span>
