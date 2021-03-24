@@ -11,6 +11,12 @@ const firebaseConfig = {
   measurementId: process.env.MEASUREMENT_ID
 };
 
+console.log(process.env);
+console.log('wca', process.env.WCA_UID);
+console.log('api key', process.env.FB_API_KEY);
+console.log('measurement id', process.env.MEASUREMENT_ID);
+console.log('app id', process.env.APP_ID);
+
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 const db = firebaseApp.firestore();
 const auth = firebase.auth();

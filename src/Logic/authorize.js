@@ -2,12 +2,6 @@
 export const localStorageKey = (key) => `WCA-Real-Time.${process.env.WCA_UID}.${key}`;
 
 export const initializeAuth = () => {
-  console.log(process.env);
-  console.log('wca', process.env.WCA_UID);
-  console.log('api key', process.env.FB_API_KEY);
-  console.log('measurement id', process.env.MEASUREMENT_ID);
-  console.log('app id', process.env.APP_ID);
-
 	const hash = window.location.hash.replace(/^#/, '');
 	const hashParams = new URLSearchParams(hash);
 
