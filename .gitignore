@@ -9,7 +9,9 @@
 /coverage
 
 # production
+.env
 /build
+/src/firebase.js
 
 # misc
 .DS_Store
