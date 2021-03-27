@@ -23,10 +23,10 @@ const firebaseConfig = process.env.NODE_ENV === 'production'
 };
 
 console.log(process.env);
-console.log('wca', process.env.WCA_UID);
-console.log('api key', process.env.FB_API_KEY);
-console.log('measurement id', process.env.MEASUREMENT_ID);
-console.log('app id', process.env.APP_ID);
+console.log('wca', process.env.REACT_APP_WCA_UID);
+console.log('api key', process.env.REACT_APP_FB_API_KEY);
+console.log('measurement id', process.env.REACT_APP_MEASUREMENT_ID);
+console.log('app id', process.env.REACT_APP_APP_ID);
 
 const firebaseApp = firebase.initializeApp(firebaseConfig);
 const db = firebaseApp.firestore();
